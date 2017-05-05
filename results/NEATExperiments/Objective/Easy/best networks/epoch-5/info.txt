@@ -1,0 +1,1 @@
+epoch: 5, fitness: 0.500000

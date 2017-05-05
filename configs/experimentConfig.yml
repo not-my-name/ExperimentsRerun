@@ -1,0 +1,13 @@
+control:
+  maxEpochs: 100
+  runsPerGenome: 10
+
+phenotype:
+  robotPhenotype: za.redbridge.simulator.phenotype.NEATPhenotype
+
+evolutionaryAlgorithm:
+  controllerEA: NEAT
+  populationSize: 20
+
+morphology:
+  morphologyFileName: configs/sensorList.yml
