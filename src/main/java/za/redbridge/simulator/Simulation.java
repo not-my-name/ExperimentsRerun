@@ -254,6 +254,18 @@ public class Simulation extends SimState {
     }
 
     /**
+    Get the behavioural characterization for this simulation run
+    **/
+    public PhenotypeBehaviour getSimBehaviour (boolean isForNull) {
+        if (!isForNull) {
+            return simBehaviour;
+        }
+        else {
+            return new PhenotypeBehaviour(construction.getConstructionZones(), discr, construction.getOverallConstructionOrder(), construction.getResources(), construction.getRobots(), 10);
+        }
+    }
+
+    /**
      * Run the simulation for the number of iterations specified in the config.
      */
     public void run() {

@@ -382,10 +382,10 @@ public class ScoreCalculator implements CalculateScore {
 
         neat_network = (NEATNetwork) method;
 
-        int[] idealMask = sensorCollection.getIdealBitMask();
+        int[] sensorMask = sensorCollection.generateRandomMask();
 
         //Create the robots with the phenotype created by the NEATNetwork
-        robotFactory = new HomogeneousRobotFactory(getPhenotypeForNetwork(neat_network, idealMask),
+        robotFactory = new HomogeneousRobotFactory(getPhenotypeForNetwork(neat_network, sensorMask),
                 simConfig.getRobotMass(), simConfig.getRobotRadius(), simConfig.getRobotColour(),
                 simConfig.getObjectsRobots());
 
@@ -398,29 +398,52 @@ public class ScoreCalculator implements CalculateScore {
 
         PhenotypeBehaviour[] individualBehaviours = new PhenotypeBehaviour[simulationRuns];
 
-
-
-        double performance = 0D;
         double objectiveFitness = 0D;
         double aveObjectiveFitnessScore = 0D;
+        double numAdjacent = 0D;
+        double normalizedNumAdjacent = 0D;
+        double numAs = 0D;
+        double numBs = 0D;
+        double numCs = 0D;
+        double numCZsbuilt = 0D;
         for (int i = 0; i < simulationRuns; i++) {
-            simulation.run();
+            try {
+                simulation.run();
 
-            if (searchMechanism == SEARCH_MECHANISM.HYBRID) {
-                objectiveFitness += simulation.getFitness();
+                if (searchMechanism == SEARCH_MECHANISM.HYBRID) {
+                    objectiveFitness += simulation.getFitness();
+                }
+                numAdjacent += simulation.getNumAdjacent();
+                normalizedNumAdjacent += simulation.getNumAdjacent()/simulation.getNumResources();
+                numAs += simulation.getNumAs();
+                numBs += simulation.getNumBs();
+                numCs += simulation.getNumCs();
+                numCZsbuilt += simulation.getNumCZsBuilt();
+                individualBehaviours[i] = simulation.getSimBehaviour(false);  //add behaviour to indivual's beahvioural list
+
+                // fitness += simulation.getFitness().getTeamFitness();
+                // fitness += 20 * (1.0 - simulation.getProgressFraction()); // Time bonus
             }
-
-            // if (isParamTuning) {
-            performance += simulation.getNumAdjacent();
-            // }
-            individualBehaviours[i] = simulation.getSimBehaviour();  //add behaviour to indivual's beahvioural list
-
-            // fitness += simulation.getFitness().getTeamFitness();
-            // fitness += 20 * (1.0 - simulation.getProgressFraction()); // Time bonus
+            catch (Exception e) {
+                individualBehaviours[i] = simulation.getSimBehaviour(true);
+            }
         }
+
+        double aveNumAdjacent = numAdjacent / simulationRuns;
+        double aveNormalizedAdj = normalizedNumAdjacent / simulationRuns;
+        double aveNumAs = numAs / simulationRuns;
+        double aveNumBs = numBs / simulationRuns;
+        double aveNumCs = numCs / simulationRuns;
+        double aveNumCZsBuilt = numCZsbuilt / simulationRuns;
 
         long duration = TimeUnit.NANOSECONDS.toMillis(System.nanoTime() - start);
         timeElapsedStats.addValue(duration);
+        numAdjacentStats.addValue(aveNumAdjacent);
+        normalizedNumAdjacentStats.addValue(aveNormalizedAdj);
+        numTypeAsConnectedStats.addValue(aveNumAs);
+        numTypeBsConnectedStats.addValue(aveNumBs);
+        numTypeCsConnectedStats.addValue(aveNumCs);
+        numCZsBuiltStats.addValue(aveNumCZsBuilt);
 
         //Get the most novel behaviour for this individual
         PhenotypeBehaviour mostNovel = PhenotypeBehaviour.getMostNovelForIndiv(individualBehaviours);
