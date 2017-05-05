@@ -1,0 +1,33 @@
+digraph G {
+  11 [ label="Bias (11)" ];
+  0 [ label="Input (0)" ];
+  1 [ label="Input (1)" ];
+  2 [ label="Input (2)" ];
+  3 [ label="Input (3)" ];
+  4 [ label="Input (4)" ];
+  5 [ label="Input (5)" ];
+  6 [ label="Input (6)" ];
+  7 [ label="Input (7)" ];
+  8 [ label="Input (8)" ];
+  9 [ label="Input (9)" ];
+  10 [ label="Input (10)" ];
+  12 [ label="Output (12)" ];
+  13 [ label="Output (13)" ];
+  { rank=same 11 0 1 2 3 4 5 6 7 8 9 10 }
+  { rank=same 12 13 }
+  11 -> 12 [ label="1.703" ];
+  0 -> 12 [ label="0.402" ];
+  0 -> 13 [ label="-3.402" ];
+  1 -> 13 [ label="1.932" ];
+  2 -> 13 [ label="-3.583" ];
+  3 -> 12 [ label="-2.119" ];
+  4 -> 12 [ label="3.654" ];
+  4 -> 13 [ label="4.222" ];
+  5 -> 12 [ label="0.114" ];
+  7 -> 12 [ label="4.110" ];
+  9 -> 12 [ label="1.882" ];
+  9 -> 13 [ label="2.291" ];
+  10 -> 13 [ label="-0.632" ];
+  1 -> 12 [ label="-1.787" ];
+  6 -> 12 [ label="1.587" ];
+}

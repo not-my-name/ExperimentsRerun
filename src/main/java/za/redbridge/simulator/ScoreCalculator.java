@@ -382,7 +382,7 @@ public class ScoreCalculator implements CalculateScore {
 
         neat_network = (NEATNetwork) method;
 
-        int[] idealMask = sensorCollection.getIdealBitMask();
+        int[] idealMask = sensorCollection.generateRandomMask();
 
         //Create the robots with the phenotype created by the NEATNetwork
         robotFactory = new HomogeneousRobotFactory(getPhenotypeForNetwork(neat_network, idealMask),
@@ -397,8 +397,6 @@ public class ScoreCalculator implements CalculateScore {
         Simulation simulation = new Simulation(simConfig, robotFactory, parameters, resourceFactory, searchMechanism);
 
         PhenotypeBehaviour[] individualBehaviours = new PhenotypeBehaviour[simulationRuns];
-
-
 
         double performance = 0D;
         double objectiveFitness = 0D;

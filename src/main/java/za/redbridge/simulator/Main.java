@@ -93,7 +93,7 @@ public class Main {
                 difficultyLevel = "Hard";
             }
 
-            String folderDir = "/NEATExperiments/Objective/" + difficultyLevel;
+            String folderDir = "/NEATExperiments/Hybrid/" + difficultyLevel;
             Utils.setDirectoryName(folderDir);
 
             //System.out.println("Sensors count :" + morphology.getNumSensors());
@@ -106,7 +106,7 @@ public class Main {
             // double[] params = {1000, 0.5, 0.3, 0.1, 0.2, 1, 0.2};
             ScoreCalculator calculateScore =
                     new ScoreCalculator(simConfig, options.simulationRuns, morphology, params, PARAM_TUNING,
-                    SEARCH_MECHANISM.OBJECTIVE, options.populationSize, 0, sensorCollection);
+                    SEARCH_MECHANISM.HYBRID, options.populationSize, 0, sensorCollection);
 
             if (!isBlank(options.genomePath)) {
                 NEATNetwork network = (NEATNetwork) readObjectFromFile(options.genomePath);
@@ -125,8 +125,9 @@ public class Main {
             log.debug("Population initialized : "+options.populationSize);
 
             //DO training
-            TrainEA train;
-            train = NEATUtil.constructNEATTrainer(population, calculateScore); //a trainer for a score function.
+            NoveltyTrainer train;
+            train = NEATUtil.constructNEATNoveltyTrainer(population, calculateScore, options.searchMechanism); //a trainer for a score function.
+            train.addStrategy(new NoveltySearchStrategy(options.populationSize, calculateScore));
             //set #threads to use
             if (thread_count > 0) {
                 train.setThreadCount(thread_count);
@@ -171,16 +172,16 @@ public class Main {
         public String configFile = "configs/simConfig.yml";
 
         @Parameter(names = "-i", description = "Number of generations to train for")
-        public int numGenerations = 2;//100;
+        public int numGenerations = 100;
 
         @Parameter(names = "-p", description = "Initial population size")
-        public int populationSize = 3;//150;
+        public int populationSize = 150;
 
         @Parameter(names = "--sim-runs", description = "Number of simulation runs per iteration")
-        public int simulationRuns = 2;//5;
+        public int simulationRuns = 5;
 
         @Parameter(names = "--search-mechanism", description = "The search mechanism to be used")
-        public SEARCH_MECHANISM searchMechanism = SEARCH_MECHANISM.OBJECTIVE;
+        public SEARCH_MECHANISM searchMechanism = SEARCH_MECHANISM.HYBRID;
 
         @Parameter(names = "--conn-density", description = "Adjust the initial connection density"
                 + " for the population")
