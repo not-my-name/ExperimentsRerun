@@ -154,7 +154,7 @@ public class ScoreCalculator implements CalculateScore {
 
                 double aveObjectiveFitnessScore = ((HybridPhenotype)hpb).getAveFitnessForPhenotype();
 
-                System.out.println(aveObjectiveFitnessScore + " " + noveltyScore);
+                //System.out.println(aveObjectiveFitnessScore + " " + noveltyScore);
 
                 double hybridScore = 0.5*aveObjectiveFitnessScore + 0.5*noveltyScore;
 

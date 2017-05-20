@@ -57,6 +57,7 @@ public class NoveltyArchive {
 	}
 
 	public double getNovelty(PhenotypeBehaviour pb) {
+		
 		if (archive.contains(pb)) {
 			// System.out.println("IN ARCHIVE");
 			return pb.getBehaviouralSparseness();

@@ -59,7 +59,7 @@ public class Main {
 
     public static void main(String[] args) throws IOException, ParseException {
 
-        for(int k = 0; k < 3; k++) { //iterating over the different simConfig files in order to change the difficulty
+        for(int k = 0; k < 4; k++) { //iterating over the different simConfig files in order to change the difficulty
 
             Args options = new Args();
             new JCommander(options, args);
@@ -84,13 +84,16 @@ public class Main {
 
             String difficultyLevel = "";
             if (difficulty == 1) {
-                difficultyLevel = "Easy";
+                difficultyLevel = "Level_1_nocoop_simple";
             }
             else if (difficulty == 2) {
-                difficultyLevel = "Medium";
+                difficultyLevel = "Level_2_coop_simple";
             }
             else if (difficulty == 3) {
-                difficultyLevel = "Hard";
+                difficultyLevel = "Level_3_nocoop_complex";
+            }
+            else if(difficulty == 4) {
+                difficultyLevel = "Level_4_coop_complex";
             }
 
             String folderDir = "/NEATExperiments/Hybrid/" + difficultyLevel;
@@ -133,9 +136,10 @@ public class Main {
                 train.setThreadCount(thread_count);
             }
 
+
             //intialise the stats recorder
             final StatsRecorder statsRecorder = new StatsRecorder(train, calculateScore, PARAM_TUNING, Arrays.toString(params), simConfig.toString());
-            statsRecorder.recordIterationStats();
+            //statsRecorder.recordIterationStats();
             // calculateScore.demo(train.getCODEC().decode(train.getBestGenome()));
             for (int i = train.getIteration(); i < options.numGenerations; i++) {
                 train.iteration();
@@ -145,7 +149,9 @@ public class Main {
                 //     break;
                 // }
             }
-            // calculateScore.demo(train.getCODEC().decode(train.getBestGenome()));
+
+            //calculateScore.demo(train.getCODEC().decode(train.getBestGenome()));
+            
             log.debug("Training complete");
             Encog.getInstance().shutdown();
         }
