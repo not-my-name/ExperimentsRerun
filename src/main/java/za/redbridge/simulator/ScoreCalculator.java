@@ -382,10 +382,10 @@ public class ScoreCalculator implements CalculateScore {
 
         neat_network = (NEATNetwork) method;
 
-        int[] idealMask = sensorCollection.getIdealBitMask();
+        int[] bitMask = sensorCollection.generateRandomMask();
 
         //Create the robots with the phenotype created by the NEATNetwork
-        robotFactory = new HomogeneousRobotFactory(getPhenotypeForNetwork(neat_network, idealMask),
+        robotFactory = new HomogeneousRobotFactory(getPhenotypeForNetwork(neat_network, bitMask),
                 simConfig.getRobotMass(), simConfig.getRobotRadius(), simConfig.getRobotColour(),
                 simConfig.getObjectsRobots());
 
