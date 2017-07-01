@@ -80,7 +80,7 @@ public class Simulation extends SimState {
         this.resourceFactory = resourceFactory;
         Settings.velocityThreshold = VELOCITY_THRESHOLD;
         this.performingNovelty = isNovelty;
-        schemaConfigNum = 0;
+        schemaConfigNum = this.config.getConfigNumber();
     }
 
     @Override

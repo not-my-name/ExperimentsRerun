@@ -28,6 +28,7 @@ import za.redbridge.simulator.factories.ResourceFactory;
 import java.util.*;
 
 import za.redbridge.simulator.StatsRecorder;
+import za.redbridge.simulator.SensorCollection;
 
 /**
  * Test runner for the simulation.
@@ -65,26 +66,23 @@ public class ScoreCalculator implements CalculateScore {
     private NoveltyBehaviour[] currentPopulation;
     private int currentBehaviour; //keep track of how many of the individuals in the generation have been processed
 
-    //variable to store the dimensions of the environment
-    private double envWidth;
-    private double envHeight;
-
     /**
     need to set this from the main method in order to run the experiments
     */
     private boolean PerformingNoveltyCalcs = true;
 
+    private SensorCollection sensorCollection;
+
     public ScoreCalculator(SimConfig simConfig, int simulationRuns,
-            Morphology sensorMorphology, int populationSize, int schemaConfigNum, double envHeight, double envWidth) {
+            Morphology sensorMorphology, int populationSize, SensorCollection sensorCollection) {
 
         this.simConfig = simConfig;
         this.simulationRuns = simulationRuns;
         this.sensorMorphology = sensorMorphology;
         this.populationSize = populationSize;
+        this.schemaConfigNum = this.simConfig.getConfigNumber();
 
-        this.envHeight = envHeight;
-        this.envWidth = envWidth;
-        this.schemaConfigNum = schemaConfigNum;
+        this.sensorCollection = sensorCollection;
 
         //there is only one ScoreCalculator that gets used
         //dont have to worry about different threads having different instances of the object
@@ -222,9 +220,11 @@ public class ScoreCalculator implements CalculateScore {
             NEATNetwork neat_network = null;
             RobotFactory robotFactory;
 
+            int[] bitMask = sensorCollection.generateRandomMask();
+
             //System.out.println("ScoreCalculator: PHENOTYPE for NEATNetwork: " + getPhenotypeForNetwork(neat_network));
             neat_network = (NEATNetwork) method;
-            robotFactory = new HomogeneousRobotFactory(getPhenotypeForNetwork(neat_network),
+            robotFactory = new HomogeneousRobotFactory(getPhenotypeForNetwork(neat_network, bitMask),
                         simConfig.getRobotMass(), simConfig.getRobotRadius(), simConfig.getRobotColour(),
                         simConfig.getObjectsRobots());
 
@@ -236,7 +236,6 @@ public class ScoreCalculator implements CalculateScore {
             resourceFactory.configure(simConfig.getResources(), resQuantity);
 
             Simulation simulation = new Simulation(simConfig, robotFactory, resourceFactory, PerformingNoveltyCalcs);
-            simulation.setSchemaConfigNumber(schemaConfigNum);
 
             //creating an arraylist to store the novelty behaviours that are produced at the end of each simulation run
             //this is used to calculate the most novel behaviour of the produced runs
@@ -333,10 +332,10 @@ public class ScoreCalculator implements CalculateScore {
     // }
 
     //HyperNEAT uses the NEATnetwork as well
-    private Phenotype getPhenotypeForNetwork(NEATNetwork network) {
+    private Phenotype getPhenotypeForNetwork(NEATNetwork network, int[] sensoryBitMask) {
         //System.out.println("ScoreCalculator: network input = " + network.getInputCount());
         //System.out.println("ScoreCalculator: network output = " + network.getOutputCount());
-        return new HyperNEATPhenotype(network, sensorMorphology);
+        return new HyperNEATPhenotype(network, sensorMorphology, sensoryBitMask);
     }
 
     public boolean isEvolvingMorphology() {
