@@ -70,7 +70,7 @@ public class ConfigurableResourceFactory extends Config implements ResourceFacto
     @Override
     public void placeInstances(PlacementArea.ForType<ResourceObject> placementArea, World world) {
         // Place resources randomly
-        
+
         placedResources.clear();
 
         placeInstances(smallResourceSpec, placementArea, world);
@@ -219,6 +219,17 @@ public class ConfigurableResourceFactory extends Config implements ResourceFacto
         }
 
         return new ResourceSpec(quantity, width, height, mass, pushingBots, value, type);
+    }
+
+    @Override
+    public int[] getTypeCount() {
+
+        int[] col = new int[3];
+        col[0] = smallResourceSpec.quantity;
+        col[1] = mediumResourceSpec.quantity;
+        col[2] = largeResourceSpec.quantity;
+
+        return col;
     }
 
     @Override

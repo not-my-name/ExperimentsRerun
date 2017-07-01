@@ -128,7 +128,7 @@ public class SimConfig extends Config {
         configNumber = (Integer)(config.get("config"));
         resources = (Map) config.get("resources");
 
-        System.out.println("SimConfig: the config number = " + getConfigNumber());
+        //System.out.println("SimConfig: the config number = " + getConfigNumber());
 
         // Robots
         String robot_input = "";

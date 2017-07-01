@@ -28,6 +28,7 @@ import za.redbridge.simulator.factories.ResourceFactory;
 import java.util.*;
 
 import za.redbridge.simulator.StatsRecorder;
+import za.redbridge.simulator.SensorCollection;
 
 /**
  * Test runner for the simulation.
@@ -69,22 +70,24 @@ public class ScoreCalculator implements CalculateScore {
     private double envWidth;
     private double envHeight;
 
+    private SensorCollection sensorCollection;
+
     /**
     need to set this from the main method in order to run the experiments
     */
     private boolean PerformingNoveltyCalcs = false;
 
     public ScoreCalculator(SimConfig simConfig, int simulationRuns,
-            Morphology sensorMorphology, int populationSize, int schemaConfigNum, double envHeight, double envWidth) {
+            Morphology sensorMorphology, int populationSize, SensorCollection sensorCollection) {
 
         this.simConfig = simConfig;
         this.simulationRuns = simulationRuns;
-        this.sensorMorphology = sensorMorphology;
+        this.sensorMorphology = sensorMorphology; //this is the ideal sensor morphology
         this.populationSize = populationSize;
 
-        this.envHeight = envHeight;
-        this.envWidth = envWidth;
-        this.schemaConfigNum = schemaConfigNum;
+        this.schemaConfigNum = this.simConfig.getConfigNumber();
+
+        this.sensorCollection = sensorCollection;
 
         //there is only one ScoreCalculator that gets used
         //dont have to worry about different threads having different instances of the object
@@ -101,6 +104,9 @@ public class ScoreCalculator implements CalculateScore {
         all of the actual simulation runs and score calculations are performed in the preIteration methods of the NoveltySStrategy class
         when TrainEA calls iteration() and then calls .calculateScore() which should just return the score for the current behaviour
         */
+
+        //creating the bit mask that will be used to simulate the broken sensors
+       int[] bitMask = sensorCollection.generateRandomMask();
 
         if(PerformingNoveltyCalcs) { //need to have a way of checking when performing objective or novelty
 
@@ -124,7 +130,7 @@ public class ScoreCalculator implements CalculateScore {
                 RobotFactory robotFactory;
 
                 neat_network = (NEATNetwork) method;
-                robotFactory = new HomogeneousRobotFactory(getPhenotypeForNetwork(neat_network),
+                robotFactory = new HomogeneousRobotFactory(getPhenotypeForNetwork(neat_network, bitMask),
                             simConfig.getRobotMass(), simConfig.getRobotRadius(), simConfig.getRobotColour(),
                             simConfig.getObjectsRobots());
 
@@ -133,8 +139,7 @@ public class ScoreCalculator implements CalculateScore {
                 ResourceFactory resourceFactory = new ConfigurableResourceFactory();
                 resourceFactory.configure(simConfig.getResources(), resQuantity);
 
-                Simulation simulation = new Simulation(simConfig, robotFactory, resourceFactory, PerformingNoveltyCalcs);
-                simulation.setSchemaConfigNumber(schemaConfigNum);
+                Simulation simulation = new Simulation(simConfig, robotFactory, resourceFactory, false);
                 //resetting the recorder values
                 double fitness = 0;
 
@@ -219,8 +224,11 @@ public class ScoreCalculator implements CalculateScore {
         BasicNetwork basic_network = null;
         RobotFactory robotFactory;
 
+        //using the ideal mask because we dont need to break sensors in the demo
+        int[] idealMask = sensorCollection.getIdealBitMask();
+
         neat_network = (NEATNetwork) method;
-        robotFactory = new HomogeneousRobotFactory(getPhenotypeForNetwork(neat_network),
+        robotFactory = new HomogeneousRobotFactory(getPhenotypeForNetwork(neat_network, idealMask),
                 simConfig.getRobotMass(), simConfig.getRobotRadius(), simConfig.getRobotColour(),
                 simConfig.getObjectsRobots());
 
@@ -263,9 +271,11 @@ public class ScoreCalculator implements CalculateScore {
         NEATNetwork neat_network = null;
         RobotFactory robotFactory;
 
+        int[] bitMask = sensorCollection.generateRandomMask();
+
         //System.out.println("ScoreCalculator: PHENOTYPE for NEATNetwork: " + getPhenotypeForNetwork(neat_network));
         neat_network = (NEATNetwork) method;
-        robotFactory = new HomogeneousRobotFactory(getPhenotypeForNetwork(neat_network),
+        robotFactory = new HomogeneousRobotFactory(getPhenotypeForNetwork(neat_network, bitMask),
                     simConfig.getRobotMass(), simConfig.getRobotRadius(), simConfig.getRobotColour(),
                     simConfig.getObjectsRobots());
 
@@ -308,10 +318,10 @@ public class ScoreCalculator implements CalculateScore {
     // }
 
     //HyperNEAT uses the NEATnetwork as well
-    private Phenotype getPhenotypeForNetwork(NEATNetwork network) {
+    private Phenotype getPhenotypeForNetwork(NEATNetwork network, int[] bitMask) {
         //System.out.println("ScoreCalculator: network input = " + network.getInputCount());
         //System.out.println("ScoreCalculator: network output = " + network.getOutputCount());
-        return new HyperNEATPhenotype(network, sensorMorphology);
+        return new HyperNEATPhenotype(network, sensorMorphology, bitMask);
     }
 
     public boolean isEvolvingMorphology() {

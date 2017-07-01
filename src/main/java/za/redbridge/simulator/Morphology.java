@@ -37,6 +37,8 @@ public class Morphology{
 
     public List<AgentSensor> getSensorList() { return sensorList; }
 
+    public AgentSensor getSensor(int i) {return sensorList.get(i); }
+
     public int getTotalReadingSize() { return totalReadingSize; }
 
     public int getNumSensors() { return numSensors; }

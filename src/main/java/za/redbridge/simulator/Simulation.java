@@ -80,7 +80,7 @@ public class Simulation extends SimState {
         this.resourceFactory = resourceFactory;
         Settings.velocityThreshold = VELOCITY_THRESHOLD;
         this.performingNovelty = isNovelty;
-        schemaConfigNum = 0;
+        schemaConfigNum = this.config.getConfigNumber();
     }
 
     @Override
@@ -111,6 +111,7 @@ public class Simulation extends SimState {
         discreteGrid = new ContToDiscrSpace(20,20,1D,1D, DISCR_GAP, schema, schemaConfigNum);
         resourceFactory.setResQuantity(schema.getResQuantity(config.getConfigNumber()));
         resourceFactory.placeInstances(placementArea.new ForType<>(), physicsWorld);
+
         construction = new ConstructionTask(schema,resourceFactory.getPlacedResources(),robotFactory.getPlacedRobots(),physicsWorld, config.getConfigNumber(), environment.getWidth(), environment.getHeight());
 
         // Now actually add the objects that have been placed to the world and schedule
@@ -139,6 +140,7 @@ public class Simulation extends SimState {
     }
 
     public void setSchemaConfigNumber(int i) {
+        System.out.println("Simulation line 142: This method should not be called");
         schemaConfigNum = i;
     }
 

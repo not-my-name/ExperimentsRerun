@@ -29,6 +29,8 @@ public interface ResourceFactory {
      */
     int getNumberOfResources();
 
+    int[] getTypeCount();
+
     // CONCURRENCY - changed return type
     ArrayList<ResourceObject> getPlacedResources();
 
