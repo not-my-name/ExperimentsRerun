@@ -166,8 +166,10 @@ public class ScoreCalculator implements CalculateScore {
         BasicNetwork basic_network = null;
         RobotFactory robotFactory;
 
+        int[] idealMask = sensorCollection.getIdealBitMask();
+
         neat_network = (NEATNetwork) method;
-        robotFactory = new HomogeneousRobotFactory(getPhenotypeForNetwork(neat_network),
+        robotFactory = new HomogeneousRobotFactory(getPhenotypeForNetwork(neat_network, idealMask),
                 simConfig.getRobotMass(), simConfig.getRobotRadius(), simConfig.getRobotColour(),
                 simConfig.getObjectsRobots());
 

@@ -47,8 +47,8 @@ public class HyperNEATPhenotype implements Phenotype {
 
         String finalReturnString = "[";
 
-        for(int k = 0; k < sensorBitMask.length; k++) {
-            finalReturnString += Integer.toString(sensorBitMask[k]) + " | ";
+        for(int k = 0; k < sensoryBitMask.length; k++) {
+            finalReturnString += Integer.toString(sensoryBitMask[k]) + " | ";
         }
 
         return finalReturnString;
