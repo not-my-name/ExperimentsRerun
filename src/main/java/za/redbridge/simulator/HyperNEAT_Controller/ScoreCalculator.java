@@ -196,14 +196,14 @@ public class ScoreCalculator implements CalculateScore {
     method to calculate the novelty of the individuals in the current population */
     public void calculateNoveltyForPopulation() {
 
-        System.out.println("ScoreCalculator (calculateNoveltyForPopulation): starting the method");
+        //System.out.println("ScoreCalculator (calculateNoveltyForPopulation): starting the method");
 
         archive.calculatePopulationNovelty();
     }
 
     public void clearCurrentGeneration() {
 
-        System.out.println("ScoreCalculator (clearCurrentGeneration): clearing the current generation of inidividuals");
+        //System.out.println("ScoreCalculator (clearCurrentGeneration): clearing the current generation of inidividuals");
 
         archive.clearGeneration();
     }

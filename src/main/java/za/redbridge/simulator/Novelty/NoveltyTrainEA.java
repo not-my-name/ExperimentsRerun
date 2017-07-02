@@ -169,39 +169,39 @@ public class NoveltyTrainEA extends NoveltyBasicEA implements MLTrain {
 
 	//@Override
 	public void iteration() {
-		System.out.println("NoveltyTrainEA line 72: starting the iteration method");
+		//System.out.println("NoveltyTrainEA line 72: starting the iteration method");
 		preIteration();
-		System.out.println("NoveltyTrainEA (iteration): just finished the preiteration");
+		//System.out.println("NoveltyTrainEA (iteration): just finished the preiteration");
 		super.iteration();
-		System.out.println("NoveltyTrainEA (iteration): just finished the super iteration method");
+		// System.out.println("NoveltyTrainEA (iteration): just finished the super iteration method");
 		postIteration();
-		System.out.println("NoveltyTrainEA (iteration): just finished the post iteration");
-		System.out.println("NoveltyTrainEA (iteration): finished the iteration method");
-		System.out.println("");
+		// System.out.println("NoveltyTrainEA (iteration): just finished the post iteration");
+		// System.out.println("NoveltyTrainEA (iteration): finished the iteration method");
+		// System.out.println("");
 	}
 
 	/**
 	 * Call the strategies after an iteration.
 	 */
 	public void postIteration() {
-		System.out.println("NoveltyTrainEA (postIteration line 187): starting the postIteration method");
+		//System.out.println("NoveltyTrainEA (postIteration line 187): starting the postIteration method");
 		for (final Strategy strategy : this.strategies) {
 			strategy.postIteration();
 		}
 
-		System.out.println("NoveltyTrainEA (posIteration line192): finished the postiteration method");
+		//System.out.println("NoveltyTrainEA (posIteration line192): finished the postiteration method");
 	}
 
 	/**
 	 * Call the strategies before an iteration.
 	 */
 	public void preIteration() {
-		System.out.println("NoveltyTrainEA (preIteration line199): starting the preiteration method");
-		System.out.println("NoveltyTrainEA (preIteration): the strategies are = " + this.strategies);
+		//System.out.println("NoveltyTrainEA (preIteration line199): starting the preiteration method");
+		//System.out.println("NoveltyTrainEA (preIteration): the strategies are = " + this.strategies);
 		for (final Strategy strategy : this.strategies) {
 			strategy.preIteration();
 		}
-		System.out.println("NoveltyTrainEA (preIteration line 203): finished the preiteration method");
+		//System.out.println("NoveltyTrainEA (preIteration line 203): finished the preiteration method");
 	}
 
 }

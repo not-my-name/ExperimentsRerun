@@ -68,7 +68,7 @@ public class NoveltyFitness{
 			NoveltyBehaviour currentBehaviour = currentGeneration[k];
 
 			if(currentBehaviour == null) { //check if something went terribly wrong in the score calculator
-				System.out.println("NoveltyFitness: found a NULL element!!!!!!!");
+				//System.out.println("NoveltyFitness: found a NULL element!!!!!!!");
 				continue;
 			}
 
@@ -79,7 +79,7 @@ public class NoveltyFitness{
 					NoveltyBehaviour otherBehaviour = currentGeneration[j];
 
 					if(otherBehaviour == null) {
-						System.out.println("NoveltyFitness: found a NULL element!!!!!!!");
+						//System.out.println("NoveltyFitness: found a NULL element!!!!!!!");
 						continue;
 					}
 
@@ -95,7 +95,7 @@ public class NoveltyFitness{
 		for(int k = 0; k < numBehaviours; k++) {
 
 			if(currentGeneration[k] == null) {
-				System.out.println("NoveltyFitness: found a NULL element!!!!!!!");
+				//System.out.println("NoveltyFitness: found a NULL element!!!!!!!");
 				continue;
 			}
 
@@ -116,14 +116,14 @@ public class NoveltyFitness{
 	//the novelty of currentConstructionZone compare to otherCZone is not the same as novelty between otherCZone and currentCZone
 	public void calculatePopulationNovelty() {
 
-		System.out.println("NoveltyFitness (calculatePopulationNovelty line 119): starting the novelty calculation for the current population");
+		//System.out.println("NoveltyFitness (calculatePopulationNovelty line 119): starting the novelty calculation for the current population");
 
 		for(int  k = 0; k < numBehaviours; k++) {
 
 			NoveltyBehaviour currentBehaviour = currentGeneration[k];
 
 			if(currentBehaviour == null) {
-				System.out.println("NoveltyFitness: found a NULL element!!!!!!!");
+				//System.out.println("NoveltyFitness: found a NULL element!!!!!!!");
 				continue;
 			}
 
@@ -139,7 +139,7 @@ public class NoveltyFitness{
 						NoveltyBehaviour otherBehaviour = currentGeneration[j];
 
 						if(otherBehaviour == null) {
-							System.out.println("NoveltyFitness: found a NULL element!!!!!!!");
+							//System.out.println("NoveltyFitness: found a NULL element!!!!!!!");
 							continue;
 						}
 
@@ -150,7 +150,7 @@ public class NoveltyFitness{
 			}
 		}
 
-		System.out.println("NoveltyFitness (line 153): finished comparing each behaviour to every other behaviour in the current population");
+		//System.out.println("NoveltyFitness (line 153): finished comparing each behaviour to every other behaviour in the current population");
 
 		for(NoveltyBehaviour novBeh : currentGeneration) { //calculates the mean novelty distance between a behaviour and k-nearest neighbours
 
