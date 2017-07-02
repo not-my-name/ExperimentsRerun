@@ -116,7 +116,7 @@ public class NoveltyFitness{
 	//the novelty of currentConstructionZone compare to otherCZone is not the same as novelty between otherCZone and currentCZone
 	public void calculatePopulationNovelty() {
 
-		System.out.println("NoveltyFitness (calculatePopulationNovelty line 119): starting the novelty calculation for the current population");
+		//System.out.println("NoveltyFitness (calculatePopulationNovelty line 119): starting the novelty calculation for the current population");
 
 		for(int  k = 0; k < numBehaviours; k++) {
 
@@ -150,7 +150,7 @@ public class NoveltyFitness{
 			}
 		}
 
-		System.out.println("NoveltyFitness (line 153): finished comparing each behaviour to every other behaviour in the current population");
+		//System.out.println("NoveltyFitness (line 153): finished comparing each behaviour to every other behaviour in the current population");
 
 		for(NoveltyBehaviour novBeh : currentGeneration) { //calculates the mean novelty distance between a behaviour and k-nearest neighbours
 

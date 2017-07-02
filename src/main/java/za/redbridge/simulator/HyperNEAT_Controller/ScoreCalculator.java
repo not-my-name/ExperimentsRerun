@@ -28,6 +28,7 @@ import za.redbridge.simulator.factories.ResourceFactory;
 import java.util.*;
 
 import za.redbridge.simulator.StatsRecorder;
+import za.redbridge.simulator.SensorCollection;
 
 /**
  * Test runner for the simulation.
@@ -65,9 +66,7 @@ public class ScoreCalculator implements CalculateScore {
     private NoveltyBehaviour[] currentPopulation;
     private int currentBehaviour; //keep track of how many of the individuals in the generation have been processed
 
-    //variable to store the dimensions of the environment
-    private double envWidth;
-    private double envHeight;
+    private SensorCollection sensorCollection;
 
     /**
     need to set this from the main method in order to run the experiments
@@ -75,16 +74,15 @@ public class ScoreCalculator implements CalculateScore {
     private boolean PerformingNoveltyCalcs = true;
 
     public ScoreCalculator(SimConfig simConfig, int simulationRuns,
-            Morphology sensorMorphology, int populationSize, int schemaConfigNum, double envHeight, double envWidth) {
+            Morphology sensorMorphology, int populationSize, SensorCollection sensorCollection) {
 
         this.simConfig = simConfig;
         this.simulationRuns = simulationRuns;
         this.sensorMorphology = sensorMorphology;
         this.populationSize = populationSize;
+        this.schemaConfigNum = this.simConfig.getConfigNumber();
 
-        this.envHeight = envHeight;
-        this.envWidth = envWidth;
-        this.schemaConfigNum = schemaConfigNum;
+        this.sensorCollection = sensorCollection;
 
         //there is only one ScoreCalculator that gets used
         //dont have to worry about different threads having different instances of the object
@@ -115,9 +113,9 @@ public class ScoreCalculator implements CalculateScore {
 
         AggregateBehaviour aggregateBehaviour = beh.getAggregateBehaviour();
 
-        if(aggregateBehaviour == null) {
-            System.out.println("ScoreCalculator: the error is still there");
-        }
+        // if(aggregateBehaviour == null) {
+        //     System.out.println("ScoreCalculator: the error is still there");
+        // }
         numAConnected_Stats.addValue(aggregateBehaviour.getAvgABlocksConnected());
         numBConnected_Stats.addValue(aggregateBehaviour.getAvgBBlocksConnected());
         numCConnected_Stats.addValue(aggregateBehaviour.getAvgCBlocksConnected());
@@ -196,14 +194,14 @@ public class ScoreCalculator implements CalculateScore {
     method to calculate the novelty of the individuals in the current population */
     public void calculateNoveltyForPopulation() {
 
-        System.out.println("ScoreCalculator (calculateNoveltyForPopulation): starting the method");
+        //System.out.println("ScoreCalculator (calculateNoveltyForPopulation): starting the method");
 
         archive.calculatePopulationNovelty();
     }
 
     public void clearCurrentGeneration() {
 
-        System.out.println("ScoreCalculator (clearCurrentGeneration): clearing the current generation of inidividuals");
+        //System.out.println("ScoreCalculator (clearCurrentGeneration): clearing the current generation of inidividuals");
 
         archive.clearGeneration();
     }
@@ -212,7 +210,7 @@ public class ScoreCalculator implements CalculateScore {
 
         ArrayList<NoveltyBehaviour> archiveList = archive.getArchiveList();
 
-        System.out.println("ScoreCalculator: the archive size is = " + archiveList.size());
+        //System.out.println("ScoreCalculator: the archive size is = " + archiveList.size());
     }
 
     public NoveltyBehaviour getNoveltyBehaviour(MLMethod method) {

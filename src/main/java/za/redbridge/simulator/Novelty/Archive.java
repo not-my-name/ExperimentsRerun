@@ -29,7 +29,7 @@ public class Archive {
 
 	public Archive() {
 
-		System.out.println("Archive: creating an archive object (constructor)");
+		//System.out.println("Archive: creating an archive object (constructor)");
 
 		noveltyArchive = new ArrayList<NoveltyBehaviour>();
 		currentGeneration = new ArrayList<NoveltyBehaviour>();
@@ -60,7 +60,7 @@ public class Archive {
 	//by comparing them with the archive content as well
 	public void calculatePopulationNovelty() {
 
-		System.out.println("Archive (calculatePopulationNovelty line 63): starting to calculate the novelty");
+		//System.out.println("Archive (calculatePopulationNovelty line 63): starting to calculate the novelty");
 
 		/**
 		when creating the noveltyFItness object for this, send through the combined population of the current generation and the archive
@@ -78,14 +78,14 @@ public class Archive {
 			currentPopulation[k] = noveltyArchive.get(k);
 		}
 
-		System.out.println("Archive (calculatePopulationNovelty): finished filling population with archive individuals");
+		//System.out.println("Archive (calculatePopulationNovelty): finished filling population with archive individuals");
 
 		//repeat for the current generation
 		for(int k = 0; k < numGeneration; k++) {
 			currentPopulation[numNovelty+k] = currentGeneration.get(k);
 		}
 
-		System.out.println("Archive: finished filling the population with currentGeneration");
+		//System.out.println("Archive: finished filling the population with currentGeneration");
 
 		NoveltyFitness noveltyFitness = new NoveltyFitness(currentPopulation);
 		noveltyFitness.calculatePopulationNovelty();
@@ -102,12 +102,12 @@ public class Archive {
 
 		addToArchive();
 
-		System.out.println("Archive (calculatePopulationNovelty) : finished running calculatePopulationNovelty");
+		//System.out.println("Archive (calculatePopulationNovelty) : finished running calculatePopulationNovelty");
 	}
 
 	private void addToArchive() {
 
-		System.out.println("Archive (addToArchive): adding the latest individuals to the persistent archive");
+		//System.out.println("Archive (addToArchive): adding the latest individuals to the persistent archive");
 
 		//find the most novel behaviour in the current generation
 		double maxNovelty = 0;
@@ -125,7 +125,7 @@ public class Archive {
 			noveltyArchive.add(mostNovel);
 		}
 
-		System.out.println("Archive (addToArchive): finished adding the behaviours to the archive");
+		//System.out.println("Archive (addToArchive): finished adding the behaviours to the archive");
 	}
 
 	public ArrayList<NoveltyBehaviour> getArchiveList() {
@@ -213,7 +213,7 @@ public class Archive {
 		find the given behaviour in the current generation
 		and get its behaviouralSparseness (average distance to k nearest neighbours)
 		*/
-		System.out.println("Archive: The getNovelty() method is being called");
+		//System.out.println("Archive: The getNovelty() method is being called");
 		double dummyReturn = 10;
 		return dummyReturn;
 	}
