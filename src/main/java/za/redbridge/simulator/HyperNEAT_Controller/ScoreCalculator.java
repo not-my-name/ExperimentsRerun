@@ -65,26 +65,19 @@ public class ScoreCalculator implements CalculateScore {
     private NoveltyBehaviour[] currentPopulation;
     private int currentBehaviour; //keep track of how many of the individuals in the generation have been processed
 
-    //variable to store the dimensions of the environment
-    private double envWidth;
-    private double envHeight;
-
     /**
     need to set this from the main method in order to run the experiments
     */
     private boolean PerformingNoveltyCalcs = true;
 
     public ScoreCalculator(SimConfig simConfig, int simulationRuns,
-            Morphology sensorMorphology, int populationSize, int schemaConfigNum, double envHeight, double envWidth) {
+            Morphology sensorMorphology, int populationSize) {
 
         this.simConfig = simConfig;
         this.simulationRuns = simulationRuns;
         this.sensorMorphology = sensorMorphology;
         this.populationSize = populationSize;
-
-        this.envHeight = envHeight;
-        this.envWidth = envWidth;
-        this.schemaConfigNum = schemaConfigNum;
+        this.schemaConfigNum = this.simConfig.getConfigNumber();
 
         //there is only one ScoreCalculator that gets used
         //dont have to worry about different threads having different instances of the object

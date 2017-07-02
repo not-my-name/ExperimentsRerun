@@ -52,66 +52,63 @@ public class Main {
 
 	private static Archive archive;
 
-	private static int schemaConfigIndex; //the schema against which the construction zone should be checked
-
-	private static String resConfig;
-
-	private static double envHeight;
-	private static double envWidth;
-
-	private static int[] sensorMorphologies = new int[]{1,2,5}; //an array storing the indexes of the various morphologies
+	private static int[] sensorMorphologies = new int[]{2,5,6}; //an array storing the indexes of the various morphologies
 
 	public static void main(String args[]) throws IOException, ParseException{
 
-		for(int j = 0; j < 3; j++) { //iterating over the different sensroy morphologies that are to be used
+		for(int j = 0; j < 3; j++) {//iterating over the different morphologies
 
-			int curMorph = sensorMorphologies[j];
+			int morphologyIndex = sensorMorphologies[j];
 
-			for(int k = 0; k < 3; k++) { //iterating over the necessary number of experiments
+			for(int k = 0; k < 4; k++) { //iterating over the different complexity levels
 
 				Args options = new Args();
 				new JCommander(options, args);
-
 				log.info(options.toString());
-				int ind = k+1;
 
-				double connectionDensity = 0.5;
-				//fetching the correct simConfig for each experiment
-				String simConfigFP = "configs/simConfig" + Integer.toString(ind) + ".yml";
-				//String experimentConfigFP = "configs/experimentConfig.yml";
-				String morphologyConfigFP = "configs/morphologyConfig.yml";
-				String folderDir = "/NoveltyResults/Morphology_" + Integer.toString(curMorph) + "/Schema_" + Integer.toString(ind) + "/";
-				Utils.setDirectoryName(folderDir);
+				int difficulty = k+1;
 
-				MorphologyConfig morphologyConfig = new MorphologyConfig(morphologyConfigFP);
-				Morphology morphology = morphologyConfig.getMorphology(curMorph);
-				numInputs = morphology.getNumSensors();
-
+				//getting the correct simulation configuration for this experiment case
+				//simconfig shows the types of blocks present, as well as their properties and the connection schema that is to be used
+				String simConfigFP = "configs/simConfig" + Integer.toString(difficulty) + ".yml";
 				SimConfig simConfig = new SimConfig(simConfigFP);
 
-				resConfig = options.environment;
+				SensorCollection sensorCollection = new SensorCollection("configs/morphologyConfig.yml");
+				Morphology morphology = sensorCollection.getMorph(morphologyIndex);
+				numInputs = morphology.getNumSensors();
 
-				envWidth = simConfig.getEnvironmentWidth();
-				envHeight = simConfig.getEnvironmentHeight();
+				//creating the folder directory for the results
+				String difficultyLevel = "";
+				if (difficulty == 1) {
+	                difficultyLevel = "Level_1_nocoop_simple";
+	            }
+	            else if (difficulty == 2) {
+	                difficultyLevel = "Level_2_coop_simple";
+	            }
+	            else if (difficulty == 3) {
+	                difficultyLevel = "Level_3_nocoop_complex";
+	            }
+	            else if(difficulty == 4) {
+	                difficultyLevel = "Level_4_coop_complex";
+	            }
+				String folderDir = "/HyperNEATExperiments/Novelty/Morphology_"
+										+ Integer.toString(morphologyIndex) + "/" + difficultyLevel;
+				Utils.setDirectoryName(folderDir);
 
-				schemaConfigIndex = simConfig.getConfigNumber();
 				ScoreCalculator scoreCalculator = new ScoreCalculator(simConfig, options.simulationRuns,
-								morphology, options.populationSize, schemaConfigIndex, envHeight, envWidth); //got this from the Main class in last years Controller Master folder
+									morphology, options.populationSize);
 
 				if (!isBlank(options.genomePath)) {
-					NEATNetwork network = (NEATNetwork) readObjectFromFile(options.genomePath);
-					scoreCalculator.demo(network);
-					return;
-				}
+					   NEATNetwork network = (NEATNetwork) readObjectFromFile(options.genomePath);
+					   scoreCalculator.demo(network);
+					   return;
+			    }
 
 				//defines the structure of the produced HyperNEAT network
 				Substrate substrate = SubstrateFactory.createSubstrate(numInputs,2);
-
 				//initialising the population
 				NEATPopulation population = new NEATPopulation(substrate, options.populationSize);
-
 				population.setInitialConnectionDensity(options.connectionDensity); //set the density based on a value that gets passed through using that Args options nested class thing in Main.java
-				population.setActivationCycles(4);
 				population.reset();
 
 				NoveltyTrainEA trainer = NEATUtil.constructNoveltyTrainer(population, scoreCalculator);
@@ -121,7 +118,6 @@ public class Main {
 				scoreCalculator.setPerformNovelty(true);
 
 				final StatsRecorder statsRecorder = new StatsRecorder(trainer, scoreCalculator); //this is basically where the simulation runs
-				//scoreCalculator.demo(trainer.getCODEC().decode(trainer.getBestGenome()))
 
 				for(int i = 0; i < options.numGenerations; i++) { //for(int i = trainer.getIteration(); i < numIterations; i++)
 					trainer.iteration(); //training the network for a single iteration
@@ -134,11 +130,10 @@ public class Main {
 					}
 				}
 
-				//scoreCalculator.demo(trainer.getCODEC().decode(trainer.getBestGenome()));
 				log.debug("Training Complete");
 				Encog.getInstance().shutdown();
-			}
 
+			}/////////////////////////////
 		}
 	}
 
