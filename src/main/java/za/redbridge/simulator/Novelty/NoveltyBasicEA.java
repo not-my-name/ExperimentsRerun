@@ -547,10 +547,10 @@ public class NoveltyBasicEA extends BasicEA {
 	@Override
 	public void iteration() {
 
-		System.out.println("NoveltyBasicEA (iteration() line 550): starting the iteration in the super class");
+		//System.out.println("NoveltyBasicEA (iteration() line 550): starting the iteration in the super class");
 
 		if (this.actualThreadCount == -1) {
-			System.out.println("NoveltyBasicEA (line 553): have to redo the preiteration because threads = -1");
+			//System.out.println("NoveltyBasicEA (line 553): have to redo the preiteration because threads = -1");
 			preIteration();
 		}
 

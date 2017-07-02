@@ -37,7 +37,7 @@ public class NoveltySearchStrategy implements Strategy {
 	private NoveltyCodec codec;
 
 	public NoveltySearchStrategy (int popSize, ScoreCalculator scoreCalculator) {
-		System.out.println("NoveltySearchStrategy: creating the new search strategy object");
+		//System.out.println("NoveltySearchStrategy: creating the new search strategy object");
 		this.popSize = popSize;
 		this.scoreCalculator = scoreCalculator;
 	}
@@ -47,7 +47,7 @@ public class NoveltySearchStrategy implements Strategy {
 	 * @param train The training algorithm.
 	 */
 	public void init(MLTrain train) {
-		System.out.println("NoveltySearchStrategy: initialising the search strategy");
+		//System.out.println("NoveltySearchStrategy: initialising the search strategy");
 		this.mainTrain = (NoveltyTrainEA)train;
 		codec = (NoveltyCodec)mainTrain.getCODEC();
 	}
@@ -58,39 +58,39 @@ public class NoveltySearchStrategy implements Strategy {
 	 */
 	public void preIteration() {
 
-		System.out.println("NoveltySearchStrategy (line 59): starting the preiteration method");
+		//System.out.println("NoveltySearchStrategy (line 59): starting the preiteration method");
 
 		int tempCounter = 0; //remember to remove all mentions of the counter once the testing is completed
 
 		if(mainTrain.getIteration() == 0) {
-			System.out.println("NoveltySearchStrategy: mainTrain iteration == 0 / start of a generation");
+			//System.out.println("NoveltySearchStrategy: mainTrain iteration == 0 / start of a generation");
 
-			System.out.println("NoveltySearchStrategy: number of species = " + mainTrain.getPopulation().getSpecies().size());
+			//System.out.println("NoveltySearchStrategy: number of species = " + mainTrain.getPopulation().getSpecies().size());
 
 			for (Species species : mainTrain.getPopulation().getSpecies()) {
-				System.out.println("NoveltySearchStrategy: number of members for current species = " + species.getMembers().size());
+				//System.out.println("NoveltySearchStrategy: number of members for current species = " + species.getMembers().size());
 				for (Genome g : species.getMembers()) {
 
 					tempCounter++;
-					System.out.println("NoveltySearchStrategy: the number of the current individual = " + tempCounter);
+					//System.out.println("NoveltySearchStrategy: the number of the current individual = " + tempCounter);
 
-					System.out.println("NoveltySearchStrategy: decoding all the individual ML methods to be tested in the simulator");
+					//System.out.println("NoveltySearchStrategy: decoding all the individual ML methods to be tested in the simulator");
 
 					MLMethod method = codec.decode(g); //this method is just called in order to
 				}
 			}
 
-			System.out.println("NoveltySearchStrategy (line 75): finished decoding all the networks");
-			System.out.println("NoveltySearchStrategy: about to calculate the novelty for each of the individuals in the score calculator");
+			//System.out.println("NoveltySearchStrategy (line 75): finished decoding all the networks");
+			//System.out.println("NoveltySearchStrategy: about to calculate the novelty for each of the individuals in the score calculator");
 
 			scoreCalculator.calculateNoveltyForPopulation();
 		}
 		else {
-			System.out.println("NoveltySearchStrategy: mainTrain iteration != 0");
+			//System.out.println("NoveltySearchStrategy: mainTrain iteration != 0");
 			scoreCalculator.clearCurrentGeneration();
 		}
 
-		System.out.println("NoveltySearchStrategy (preIteration): finished running the preIteration method");
+		//System.out.println("NoveltySearchStrategy (preIteration): finished running the preIteration method");
 	}
 
 	/**

@@ -65,26 +65,19 @@ public class ScoreCalculator implements CalculateScore {
     private NoveltyBehaviour[] currentPopulation;
     private int currentBehaviour; //keep track of how many of the individuals in the generation have been processed
 
-    //variable to store the dimensions of the environment
-    private double envWidth;
-    private double envHeight;
-
     /**
     need to set this from the main method in order to run the experiments
     */
     private boolean PerformingNoveltyCalcs = true;
 
     public ScoreCalculator(SimConfig simConfig, int simulationRuns,
-            Morphology sensorMorphology, int populationSize, int schemaConfigNum, double envHeight, double envWidth) {
+            Morphology sensorMorphology, int populationSize) {
 
         this.simConfig = simConfig;
         this.simulationRuns = simulationRuns;
         this.sensorMorphology = sensorMorphology;
         this.populationSize = populationSize;
-
-        this.envHeight = envHeight;
-        this.envWidth = envWidth;
-        this.schemaConfigNum = schemaConfigNum;
+        this.schemaConfigNum = this.simConfig.getConfigNumber();
 
         //there is only one ScoreCalculator that gets used
         //dont have to worry about different threads having different instances of the object
@@ -196,14 +189,14 @@ public class ScoreCalculator implements CalculateScore {
     method to calculate the novelty of the individuals in the current population */
     public void calculateNoveltyForPopulation() {
 
-        System.out.println("ScoreCalculator (calculateNoveltyForPopulation): starting the method");
+        //System.out.println("ScoreCalculator (calculateNoveltyForPopulation): starting the method");
 
         archive.calculatePopulationNovelty();
     }
 
     public void clearCurrentGeneration() {
 
-        System.out.println("ScoreCalculator (clearCurrentGeneration): clearing the current generation of inidividuals");
+        //System.out.println("ScoreCalculator (clearCurrentGeneration): clearing the current generation of inidividuals");
 
         archive.clearGeneration();
     }
@@ -212,7 +205,7 @@ public class ScoreCalculator implements CalculateScore {
 
         ArrayList<NoveltyBehaviour> archiveList = archive.getArchiveList();
 
-        System.out.println("ScoreCalculator: the archive size is = " + archiveList.size());
+        //System.out.println("ScoreCalculator: the archive size is = " + archiveList.size());
     }
 
     public NoveltyBehaviour getNoveltyBehaviour(MLMethod method) {
@@ -277,7 +270,7 @@ public class ScoreCalculator implements CalculateScore {
 
         }
         catch(Exception e) {
-            System.out.println("ScoreCalculator getNoveltyBehaviour method: SOMETHING WENT HORRIBLY WRONG");
+            //System.out.println("ScoreCalculator getNoveltyBehaviour method: SOMETHING WENT HORRIBLY WRONG");
             e.printStackTrace();
             return null;
         }
