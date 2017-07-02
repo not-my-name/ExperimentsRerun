@@ -151,7 +151,7 @@ public class Main {
             }
 
             //calculateScore.demo(train.getCODEC().decode(train.getBestGenome()));
-            
+
             log.debug("Training complete");
             Encog.getInstance().shutdown();
         }
