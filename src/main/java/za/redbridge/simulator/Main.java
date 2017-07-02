@@ -70,11 +70,6 @@ public class Main {
             String simConfigFP = "configs/simConfig" + Integer.toString(difficulty) + ".yml";
 
             SimConfig simConfig = new SimConfig(simConfigFP);
-            // if (!isBlank(options.configFile)) {
-            //     simConfig = new SimConfig(options.configFile);
-            // } else {
-            //     simConfig = new SimConfig();
-            // }
 
             //MorphologyConfig mc = new MorphologyConfig("configs/morphologyConfig.yml");
             SensorCollection sensorCollection = new SensorCollection("configs/morphologyConfig.yml");

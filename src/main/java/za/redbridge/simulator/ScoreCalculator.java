@@ -112,8 +112,7 @@ public class ScoreCalculator implements CalculateScore {
 
         //System.out.println("ScoreCalculator (line 87): performing the score calculation");
 
-        //creating the bit mask that is going ot be used to simulate the sensors on this team of robots breaking
-        int[] bitMask = sensorCollection.getIdealBitMask();
+        int[] idealMask = sensorCollection.getIdealBitMask();
 
         if (searchMechanism == SEARCH_MECHANISM.NOVELTY) {
             NoveltyPhenotype n = (NoveltyPhenotype)method;
@@ -177,7 +176,7 @@ public class ScoreCalculator implements CalculateScore {
                 neat_network = (NEATNetwork) method;
 
                 //Create the robots with the phenotype created by the NEATNetwork
-                robotFactory = new HomogeneousRobotFactory(getPhenotypeForNetwork(neat_network, bitMask),
+                robotFactory = new HomogeneousRobotFactory(getPhenotypeForNetwork(neat_network, idealMask),
                         simConfig.getRobotMass(), simConfig.getRobotRadius(), simConfig.getRobotColour(),
                         simConfig.getObjectsRobots());
 
@@ -397,8 +396,6 @@ public class ScoreCalculator implements CalculateScore {
         Simulation simulation = new Simulation(simConfig, robotFactory, parameters, resourceFactory, searchMechanism);
 
         PhenotypeBehaviour[] individualBehaviours = new PhenotypeBehaviour[simulationRuns];
-
-
 
         double performance = 0D;
         double objectiveFitness = 0D;
