@@ -28,6 +28,7 @@ import za.redbridge.simulator.factories.ResourceFactory;
 import java.util.*;
 
 import za.redbridge.simulator.StatsRecorder;
+import za.redbridge.simulator.SensorCollection;
 
 /**
  * Test runner for the simulation.
@@ -65,9 +66,7 @@ public class ScoreCalculator implements CalculateScore {
     private NoveltyBehaviour[] currentPopulation;
     private int currentBehaviour; //keep track of how many of the individuals in the generation have been processed
 
-    //variable to store the dimensions of the environment
-    private double envWidth;
-    private double envHeight;
+    private SensorCollection sensorCollection;
 
     /**
     need to set this from the main method in order to run the experiments
@@ -75,16 +74,15 @@ public class ScoreCalculator implements CalculateScore {
     private boolean PerformingNoveltyCalcs = false;
 
     public ScoreCalculator(SimConfig simConfig, int simulationRuns,
-            Morphology sensorMorphology, int populationSize, int schemaConfigNum, double envHeight, double envWidth) {
+            Morphology sensorMorphology, int populationSize, SensorCollection sensorCollection) {
 
         this.simConfig = simConfig;
         this.simulationRuns = simulationRuns;
         this.sensorMorphology = sensorMorphology;
         this.populationSize = populationSize;
 
-        this.envHeight = envHeight;
-        this.envWidth = envWidth;
-        this.schemaConfigNum = schemaConfigNum;
+        this.schemaConfigNum = this.simConfig.getConfigNumber();
+        this.sensorCollection = sensorCollection;
 
         //there is only one ScoreCalculator that gets used
         //dont have to worry about different threads having different instances of the object
