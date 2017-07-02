@@ -119,7 +119,7 @@ config6:
     up: C
     down: C
 config7:
-  resQuantity : 6 6 3
+  resQuantity : 5 5 5
   resource0:
     left: A B
     right: A B
@@ -128,13 +128,13 @@ config7:
   resource1:
     left: A
     right: A
-    up: B
-    down: B
+    up: B C
+    down: B C
   resource2:
-    left: X
-    right: X
-    up: A
-    down: A
+    left: C
+    right: C
+    up: A B
+    down: A B
 config8:
   resQuantity : 6 6 3
   resource0:
