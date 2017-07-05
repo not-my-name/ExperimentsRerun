@@ -173,11 +173,11 @@ public class NoveltyTrainEA extends NoveltyBasicEA implements MLTrain {
 		preIteration();
 		//System.out.println("NoveltyTrainEA (iteration): just finished the preiteration");
 		super.iteration();
-		//System.out.println("NoveltyTrainEA (iteration): just finished the super iteration method");
+		// System.out.println("NoveltyTrainEA (iteration): just finished the super iteration method");
 		postIteration();
-		//System.out.println("NoveltyTrainEA (iteration): just finished the post iteration");
-		//System.out.println("NoveltyTrainEA (iteration): finished the iteration method");
-		//System.out.println("");
+		// System.out.println("NoveltyTrainEA (iteration): just finished the post iteration");
+		// System.out.println("NoveltyTrainEA (iteration): finished the iteration method");
+		// System.out.println("");
 	}
 
 	/**

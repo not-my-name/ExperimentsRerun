@@ -23,12 +23,14 @@ public class HyperNEATPhenotype implements Phenotype {
     private final MLData input;
     private final List<AgentSensor> sensors;
 
-    public HyperNEATPhenotype(NEATNetwork network, Morphology morphology) { //need to change the SensorMorpholgy to just Morphology that Daniel made
+    private final int[] sensoryBitMask;
+
+    public HyperNEATPhenotype(NEATNetwork network, Morphology morphology, int[] sensoryBitMask) { //need to change the SensorMorpholgy to just Morphology that Daniel made
+        
         this.network = network;
         this.morphology = morphology;
 
-        //System.out.println("HyperNEATPhenotype: network input = " + network.getInputCount());
-        //System.out.println("HyperNEATPhenotype: network output = " + network.getOutputCount());
+        this.sensoryBitMask = sensoryBitMask;
 
         // Initialise sensors
         final int numSensors = morphology.getNumSensors();
@@ -41,6 +43,25 @@ public class HyperNEATPhenotype implements Phenotype {
         //System.out.println("HyperNEATPhenotype: number sensors = " + numSensors);
     }
 
+    public String bitMaskToString() {
+
+        String finalReturnString = "[";
+
+        for(int k = 0; k < sensoryBitMask.length; k++) {
+            finalReturnString += Integer.toString(sensoryBitMask[k]) + " | ";
+        }
+
+        return finalReturnString;
+    }
+
+    public NEATNetwork getNetwork() {
+        return network;
+    }
+
+    public Morphology getMorphology() {
+        return morphology;
+    }
+
     @Override
     public List<AgentSensor> getSensors() {
         return sensors;
@@ -48,13 +69,17 @@ public class HyperNEATPhenotype implements Phenotype {
 
     @Override
     public Double2D step(List<List<Double>> sensorReadings) {
+
         final MLData input = this.input;
         for (int i = 0, n = input.size(); i < n; i++) {
-            input.setData(i, sensorReadings.get(i).get(0)); //assigning the sensor inputs to the input nodes
-        }
 
-        //System.out.println("HyperNEATPhenotype: size of input = " + input.size());
-        //System.out.println("HyperNEATPhenotype: size of network input = " + network.getInputCount());
+            if(sensoryBitMask[i] == 0) {
+                input.setData(i, 0); //if the sensor is broken, don't assign any input
+            }
+            else {
+                input.setData(i, sensorReadings.get(i).get(0)); //assigning the sensor inputs to the input nodes
+            }
+        }
 
         MLData output = network.compute(input); //sending the inputs from the robot sensors to the network
 
@@ -65,7 +90,7 @@ public class HyperNEATPhenotype implements Phenotype {
 
     @Override
     public Phenotype clone() {
-        return new HyperNEATPhenotype(network, this.morphology.clone());
+        return new HyperNEATPhenotype(network, this.morphology.clone(), this.sensoryBitMask);
     }
 
     @Override

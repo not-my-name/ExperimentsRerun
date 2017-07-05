@@ -68,7 +68,7 @@ public class NoveltyFitness{
 			NoveltyBehaviour currentBehaviour = currentGeneration[k];
 
 			if(currentBehaviour == null) { //check if something went terribly wrong in the score calculator
-				System.out.println("NoveltyFitness: found a NULL element!!!!!!!");
+				//System.out.println("NoveltyFitness: found a NULL element!!!!!!!");
 				continue;
 			}
 
@@ -79,7 +79,7 @@ public class NoveltyFitness{
 					NoveltyBehaviour otherBehaviour = currentGeneration[j];
 
 					if(otherBehaviour == null) {
-						System.out.println("NoveltyFitness: found a NULL element!!!!!!!");
+						//System.out.println("NoveltyFitness: found a NULL element!!!!!!!");
 						continue;
 					}
 
@@ -95,7 +95,7 @@ public class NoveltyFitness{
 		for(int k = 0; k < numBehaviours; k++) {
 
 			if(currentGeneration[k] == null) {
-				System.out.println("NoveltyFitness: found a NULL element!!!!!!!");
+				//System.out.println("NoveltyFitness: found a NULL element!!!!!!!");
 				continue;
 			}
 
@@ -123,7 +123,7 @@ public class NoveltyFitness{
 			NoveltyBehaviour currentBehaviour = currentGeneration[k];
 
 			if(currentBehaviour == null) {
-				System.out.println("NoveltyFitness: found a NULL element!!!!!!!");
+				//System.out.println("NoveltyFitness: found a NULL element!!!!!!!");
 				continue;
 			}
 
@@ -139,7 +139,7 @@ public class NoveltyFitness{
 						NoveltyBehaviour otherBehaviour = currentGeneration[j];
 
 						if(otherBehaviour == null) {
-							System.out.println("NoveltyFitness: found a NULL element!!!!!!!");
+							//System.out.println("NoveltyFitness: found a NULL element!!!!!!!");
 							continue;
 						}
 

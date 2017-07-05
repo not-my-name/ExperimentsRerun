@@ -66,12 +66,12 @@ public class ScoreCalculator implements CalculateScore {
     private NoveltyBehaviour[] currentPopulation;
     private int currentBehaviour; //keep track of how many of the individuals in the generation have been processed
 
-    private SensorCollection sensorCollection;
-
     /**
     need to set this from the main method in order to run the experiments
     */
     private boolean PerformingNoveltyCalcs = true;
+
+    private SensorCollection sensorCollection;
 
     public ScoreCalculator(SimConfig simConfig, int simulationRuns,
             Morphology sensorMorphology, int populationSize, SensorCollection sensorCollection) {
@@ -113,9 +113,9 @@ public class ScoreCalculator implements CalculateScore {
 
         AggregateBehaviour aggregateBehaviour = beh.getAggregateBehaviour();
 
-        // if(aggregateBehaviour == null) {
-        //     System.out.println("ScoreCalculator: the error is still there");
-        // }
+        if(aggregateBehaviour == null) {
+            System.out.println("ScoreCalculator: the error is still there");
+        }
         numAConnected_Stats.addValue(aggregateBehaviour.getAvgABlocksConnected());
         numBConnected_Stats.addValue(aggregateBehaviour.getAvgBBlocksConnected());
         numCConnected_Stats.addValue(aggregateBehaviour.getAvgCBlocksConnected());
@@ -166,8 +166,10 @@ public class ScoreCalculator implements CalculateScore {
         BasicNetwork basic_network = null;
         RobotFactory robotFactory;
 
+        int[] idealMask = sensorCollection.getIdealBitMask();
+
         neat_network = (NEATNetwork) method;
-        robotFactory = new HomogeneousRobotFactory(getPhenotypeForNetwork(neat_network),
+        robotFactory = new HomogeneousRobotFactory(getPhenotypeForNetwork(neat_network, idealMask),
                 simConfig.getRobotMass(), simConfig.getRobotRadius(), simConfig.getRobotColour(),
                 simConfig.getObjectsRobots());
 
@@ -210,7 +212,7 @@ public class ScoreCalculator implements CalculateScore {
 
         ArrayList<NoveltyBehaviour> archiveList = archive.getArchiveList();
 
-        //System.out.println("ScoreCalculator: the archive size is = " + archiveList.size());
+        System.out.println("ScoreCalculator: the archive size is = " + archiveList.size());
     }
 
     public NoveltyBehaviour getNoveltyBehaviour(MLMethod method) {
@@ -220,9 +222,11 @@ public class ScoreCalculator implements CalculateScore {
             NEATNetwork neat_network = null;
             RobotFactory robotFactory;
 
+            int[] bitMask = sensorCollection.getIdealBitMask();
+
             //System.out.println("ScoreCalculator: PHENOTYPE for NEATNetwork: " + getPhenotypeForNetwork(neat_network));
             neat_network = (NEATNetwork) method;
-            robotFactory = new HomogeneousRobotFactory(getPhenotypeForNetwork(neat_network),
+            robotFactory = new HomogeneousRobotFactory(getPhenotypeForNetwork(neat_network, bitMask),
                         simConfig.getRobotMass(), simConfig.getRobotRadius(), simConfig.getRobotColour(),
                         simConfig.getObjectsRobots());
 
@@ -234,7 +238,6 @@ public class ScoreCalculator implements CalculateScore {
             resourceFactory.configure(simConfig.getResources(), resQuantity);
 
             Simulation simulation = new Simulation(simConfig, robotFactory, resourceFactory, PerformingNoveltyCalcs);
-            simulation.setSchemaConfigNumber(schemaConfigNum);
 
             //creating an arraylist to store the novelty behaviours that are produced at the end of each simulation run
             //this is used to calculate the most novel behaviour of the produced runs
@@ -331,10 +334,10 @@ public class ScoreCalculator implements CalculateScore {
     // }
 
     //HyperNEAT uses the NEATnetwork as well
-    private Phenotype getPhenotypeForNetwork(NEATNetwork network) {
+    private Phenotype getPhenotypeForNetwork(NEATNetwork network, int[] sensoryBitMask) {
         //System.out.println("ScoreCalculator: network input = " + network.getInputCount());
         //System.out.println("ScoreCalculator: network output = " + network.getOutputCount());
-        return new HyperNEATPhenotype(network, sensorMorphology);
+        return new HyperNEATPhenotype(network, sensorMorphology, sensoryBitMask);
     }
 
     public boolean isEvolvingMorphology() {

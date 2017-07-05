@@ -49,24 +49,20 @@ public class Main {
 	private int simulationRuns;
 	private int numIterations;
 	private int threadCount;
-
-	private static Archive archive;
+	private static String resConfig;
 
 	public static void main(String args[]) throws IOException, ParseException{
 
-		for(int k = 0; k < 4; k++) { //iterating over the different complexity levels
+		for(int k = 0; k < 4; k++) { //iterating over the various complexity levels
 
 			Args options = new Args();
 			new JCommander(options, args);
-			log.info(options.toString());
+			int difficulty = k+1; //simconfig labelled starting from 1, not 0
 
-			int difficulty = k+1;
-
-			//getting the correct simulation configuration for this experiment case
-			//simconfig shows the types of blocks present, as well as their properties and the connection schema that is to be used
 			String simConfigFP = "configs/simConfig" + Integer.toString(difficulty) + ".yml";
 			SimConfig simConfig = new SimConfig(simConfigFP);
 
+			//getting the ideal sensor morphology for the initial setup
 			SensorCollection sensorCollection = new SensorCollection("configs/morphologyConfig.yml");
 			Morphology morphology = sensorCollection.getIdealMorph();
 			numInputs = morphology.getNumSensors();
@@ -85,8 +81,10 @@ public class Main {
             else if(difficulty == 4) {
                 difficultyLevel = "Level_4_coop_complex";
             }
-			String folderDir = "/HyperNEATExperiments/Novelty/" + difficultyLevel;
+			String folderDir = "/HyperNEATExperiments/Hybrid/" + difficultyLevel;
 			Utils.setDirectoryName(folderDir);
+
+			resConfig = options.environment;
 
 			ScoreCalculator scoreCalculator = new ScoreCalculator(simConfig, options.simulationRuns,
 								morphology, options.populationSize, sensorCollection);
@@ -97,12 +95,13 @@ public class Main {
 				   NEATNetwork network = (NEATNetwork) readObjectFromFile(options.genomePath);
 				   scoreCalculator.demo(network);
 				   return;
-		    }
+			}
 
-			//defines the structure of the produced HyperNEAT network
-			Substrate substrate = SubstrateFactory.createSubstrate(numInputs,2);
-			//initialising the population
-			NEATPopulation population = new NEATPopulation(substrate, options.populationSize);
+			   //defines the structure of the produced HyperNEAT network
+   			Substrate substrate = SubstrateFactory.createSubstrate(numInputs,2);
+   			//initialising the population
+   			NEATPopulation population = new NEATPopulation(substrate, options.populationSize);
+
 			population.setInitialConnectionDensity(options.connectionDensity); //set the density based on a value that gets passed through using that Args options nested class thing in Main.java
 			population.reset();
 
@@ -110,7 +109,7 @@ public class Main {
 			trainer.addStrategy(new NoveltySearchStrategy(options.populationSize, scoreCalculator));
 			trainer.setThreadCount(0);
 
-			final StatsRecorder statsRecorder = new StatsRecorder(trainer, scoreCalculator); //this is basically where the simulation runs
+			final StatsRecorder statsRecorder = new StatsRecorder(trainer, scoreCalculator);
 
 			for(int i = 0; i < options.numGenerations; i++) { //for(int i = trainer.getIteration(); i < numIterations; i++)
 				trainer.iteration(); //training the network for a single iteration
@@ -126,7 +125,8 @@ public class Main {
 			log.debug("Training Complete");
 			Encog.getInstance().shutdown();
 
-		}
+		} /////////////////////////////////////////
+
 	}
 
 	private static class Args {
