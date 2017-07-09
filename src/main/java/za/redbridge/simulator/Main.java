@@ -60,7 +60,7 @@ public class Main {
 
 			int morphologyIndex = sensorMorphologies[j];
 
-			for(int k = 0; k < 4; k++) { //iterating over the different complexity levels
+			for(int k = 0; k < 3; k++) { //iterating over the different complexity levels
 
 				Args options = new Args();
 				new JCommander(options, args);
