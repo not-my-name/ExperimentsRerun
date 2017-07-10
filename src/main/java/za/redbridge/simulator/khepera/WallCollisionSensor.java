@@ -19,7 +19,7 @@ import java.util.Map;
  */
 public class WallCollisionSensor extends AgentSensor
 {
-    private static final float COLOR_SENSOR_RANGE = 1f;
+    private static final float COLOR_SENSOR_RANGE = 1.0f;
     private static final float COLOR_SENSOR_FOV = 1.8f; // This is a guess
 
     public static final float RANGE = 2.0f;

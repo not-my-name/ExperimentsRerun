@@ -22,8 +22,8 @@ public class FitnessStats {
     }
 
     public FitnessStats(int maxSteps) {
-        totalResourceValue = 0D;
         this.maxSteps = maxSteps;
+        this.totalResourceValue = 10;
     }
 
     /**
@@ -55,8 +55,7 @@ public class FitnessStats {
 
     /** Gets the normalized team fitness (out of 100) */
     public double getTeamFitness() {
-        // return (teamFitness / totalResourceValue) * 100;
-        return teamFitness;
+        return (teamFitness / totalResourceValue) * 100;
     }
 
     public Map<Phenotype,Double> getPhenotypeFitnessMap() {

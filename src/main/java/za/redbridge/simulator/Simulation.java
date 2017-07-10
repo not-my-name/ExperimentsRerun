@@ -3,37 +3,31 @@ package za.redbridge.simulator;
 import org.jbox2d.common.Settings;
 import org.jbox2d.common.Vec2;
 import org.jbox2d.dynamics.World;
-import org.jbox2d.common.Transform;
 
 import java.util.Set;
 
 import sim.engine.SimState;
-import sim.engine.Stoppable;
-import sim.engine.Repeat;
 import sim.field.continuous.Continuous2D;
-import sim.field.grid.SparseGrid2D;
-
 import sim.util.Double2D;
 import za.redbridge.simulator.config.SimConfig;
-import za.redbridge.simulator.config.SchemaConfig;
-import za.redbridge.simulator.factories.ResourceFactory;
 import za.redbridge.simulator.factories.RobotFactory;
 import za.redbridge.simulator.object.PhysicalObject;
 import za.redbridge.simulator.object.RobotObject;
-// import za.redbridge.simulator.object.TargetAreaObject;
+import za.redbridge.simulator.object.TargetAreaObject;
 import za.redbridge.simulator.object.ResourceObject;
 import za.redbridge.simulator.object.WallObject;
-import za.redbridge.simulator.object.DetectionPoint;
 import za.redbridge.simulator.physics.SimulationContactListener;
 import za.redbridge.simulator.portrayal.DrawProxy;
-import za.redbridge.simulator.novelty.PhenotypeBehaviour;
-import za.redbridge.simulator.paramTuning.*;
-import za.redbridge.simulator.Main.SEARCH_MECHANISM;
-
 import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Map;
-import java.util.HashMap;
+
+import java.util.concurrent.CopyOnWriteArrayList;
+import java.util.Iterator;
+import za.redbridge.simulator.config.SchemaConfig;
+
+import za.redbridge.simulator.NoveltyBehaviour;
+
+//import za.redbridge.simulator.FitnessMonitor;
+import za.redbridge.simulator.factories.ResourceFactory;
 
 /**
  * The main simulation state.
@@ -46,68 +40,63 @@ public class Simulation extends SimState {
     public static final float DISCR_GAP = 0.25f;
 
     private Continuous2D environment;
-    private SparseGrid2D constructionEnvironment;
     private World physicsWorld;
     private PlacementArea placementArea;
     private DrawProxy drawProxy;
 
     private final SimulationContactListener contactListener = new SimulationContactListener();
 
-    public static final float TIME_STEP = 1f / 10f;
+    private static final float TIME_STEP = 1f / 10f;
     private static final int VELOCITY_ITERATIONS = 6;
     private static final int POSITION_ITERATIONS = 3;
 
-    // private TargetAreaObject targetArea;
+    private TargetAreaObject targetArea;
     private RobotFactory robotFactory;
     private ConstructionTask construction;
-    private SchemaConfig schema;
     private final SimConfig config;
 
-    private double averageDistancesOverRun = 0D;
+    private SchemaConfig schema;
 
     private boolean stopOnceCollected = true;
 
+    private double averageDistancesOverRun = 0D;
+
+    //private FitnessMonitor fitnessMonitor;
+
+    private int schemaConfigNum;
     private ResourceFactory resourceFactory;
+    private ContToDiscrSpace discreteGrid;
 
-    private final double [] parameters;
+    private boolean performingNovelty;
+    private NoveltyBehaviour simBehaviour;
 
-    private final Map<PhysicalObject,Repeat> stoppables;
+    //private final RobotObject[] existingRobots;
 
-    private final SEARCH_MECHANISM searchMechanism;
+    public Simulation(SimConfig config, RobotFactory robotFactory, ResourceFactory resourceFactory, boolean isNovelty) {
 
-    private PhenotypeBehaviour simBehaviour;
-
-    private ContToDiscrSpace discr;
-
-
-
-    public Simulation(SimConfig config, RobotFactory robotFactory, double [] parameters, ResourceFactory resourceFactory, SEARCH_MECHANISM searchMechanism) {
         super(config.getSimulationSeed());
         this.config = config;
         this.robotFactory = robotFactory;
-        Settings.velocityThreshold = VELOCITY_THRESHOLD;
-        this.parameters = parameters;
         this.resourceFactory = resourceFactory;
-        this.searchMechanism = searchMechanism;
-        stoppables = new HashMap<>();
-
+        Settings.velocityThreshold = VELOCITY_THRESHOLD;
+        this.performingNovelty = isNovelty;
+        schemaConfigNum = 0;
     }
 
     @Override
     public void start() {
+
         super.start();
-        // discr.clearGrid();
 
         environment =
                 new Continuous2D(1.0, config.getEnvironmentWidth(), config.getEnvironmentHeight());
-        constructionEnvironment = new SparseGrid2D(20, 20);
         drawProxy = new DrawProxy(environment.getWidth(), environment.getHeight());
         environment.setObjectLocation(drawProxy, new Double2D());
 
         physicsWorld = new World(new Vec2());
         placementArea =
                 new PlacementArea((float) environment.getWidth(), (float) environment.getHeight());
-        placementArea.setSeed(System.nanoTime());
+        placementArea.setSeed(config.getSimulationSeed());
         schedule.reset();
         System.gc();
 
@@ -115,43 +104,28 @@ public class Simulation extends SimState {
 
         // Create ALL the objects
         createWalls();
-
-        robotFactory.placeInstances(placementArea.new ForType<>(), physicsWorld);
+        robotFactory.placeInstances(placementArea.new ForType<>(), physicsWorld, config.getTargetAreaPlacement());
 
         schema = new SchemaConfig("configs/schemaConfig.yml", 10, 3);
-        discr = new ContToDiscrSpace(20,20,1D,1D, DISCR_GAP, schema, config.getConfigNumber());
+        //schema = new SchemaConfig("configs/schemaConfig.yml", 3, 3);
+        discreteGrid = new ContToDiscrSpace(20,20,1D,1D, DISCR_GAP, schema, schemaConfigNum);
         resourceFactory.setResQuantity(schema.getResQuantity(config.getConfigNumber()));
         resourceFactory.placeInstances(placementArea.new ForType<>(), physicsWorld);
-        construction = new ConstructionTask(schema,resourceFactory.getPlacedResources(),robotFactory.getPlacedRobots(),physicsWorld, (int)parameters[0], config.getConfigNumber(), environment.getWidth(), environment.getHeight());
+        construction = new ConstructionTask(schema,resourceFactory.getPlacedResources(),robotFactory.getPlacedRobots(),physicsWorld, config.getConfigNumber(), environment.getWidth(), environment.getHeight());
 
-        int cnt = 0;
         // Now actually add the objects that have been placed to the world and schedule
+        int count = 0;
         for (PhysicalObject object : placementArea.getPlacedObjects()) {
-            // if (object instanceof ResourceObject) {
-            //     // ResourceObject res = (ResourceObject)object;
-            //     // res.getBodyAngle();
-            //     // DetectionPoint[] dps = res.getDPs();
 
-            //     // for (int i = 0; i < dps.length; i++) {
-            //     //     // for (int j = 0; j < 3; j++) {
-            //     //         DetectionPoint dpI = new DetectionPoint(dps[i], 0);
-            //     //         drawProxy.registerDrawable(dps[i].getPortrayal());
-            //     //         schedule.scheduleRepeating(dpI);
-            //     //     // }
-
-            //     // }
-            //     discr.getNearestDiscrPos(object.getBody().getPosition());
-            // }
             drawProxy.registerDrawable(object.getPortrayal());
-            // Repeat objRepeat = (Repeat)schedule.scheduleRepeating(object);
             schedule.scheduleRepeating(object);
-            // stoppables.put(object,objRepeat);
-            // System.out.println("Ordering for " + object + " = " + stoppables.get(object).getOrdering());
         }
-        // stoppables.put(schedule.scheduleRepeating(construction));
-        schedule.scheduleRepeating(construction);
-        schedule.scheduleRepeating(simState -> physicsWorld.step(TIME_STEP, VELOCITY_ITERATIONS, POSITION_ITERATIONS));
 
+        schedule.scheduleRepeating(construction);
+
+        schedule.scheduleRepeating(simState ->
+            physicsWorld.step(TIME_STEP, VELOCITY_ITERATIONS, POSITION_ITERATIONS)
+        );
     }
 
     /**
@@ -159,19 +133,27 @@ public class Simulation extends SimState {
     **/
     @Override
     public void finish() {
-        super.finish();
-        if (searchMechanism == SEARCH_MECHANISM.NOVELTY || searchMechanism == SEARCH_MECHANISM.HYBRID) {
-            construction.updateCZs();
-            simBehaviour = new PhenotypeBehaviour(construction.getConstructionZones(), discr, construction.getOverallConstructionOrder(), construction.getResources(), construction.getRobots(), 10);
-        }
-        // else {
-        //     // System.out.println("FINISH");
 
-        //     // discr.printGrid();
-        //     construction.updateCZs();
-        //     getFitness();
-        //     // construction.printSizes();
-        // }
+        super.finish();
+
+	//ArrayList<RobotObject> tempBots = robotFactory.getPlacedRobots();
+        //ArrayList<ResourceObject> tempResources = resourceFactory.getPlacedResources();
+
+        construction.updateConstructionZones();
+
+        //THIS IS FOR THE OBJECTIVE FITNESS
+        //Behaviour behaviour = new Behaviour(construction, schemaConfigNum);
+
+	//System.out.println("Simulation: The stats after the demo");
+	//System.out.println("Simulation: num A = " + behaviour.getConnectedA());
+	//System.out.println("Simulation: num B = " + behaviour.getConnectedB());
+	//System.out.println("Simulation: num C = " + behaviour.getConnectedC());
+
+        //construction.updateConstructionZones();
+    }
+
+    public void setSchemaConfigNumber(int i) {
+        schemaConfigNum = i;
     }
 
     // Walls are simply added to environment since they do not need updating
@@ -204,15 +186,29 @@ public class Simulation extends SimState {
     }
 
     public void checkConstructionTask(){
-        construction.checkSchema(0);
+        System.out.println("Simulation checkConstructionTask: THIS METHOD IS BEING CALLED FROM SOMEWHERE, DONT THINK IT SHOULD");
+        //construction.checkSchema(0);
     }
 
-    public Map<PhysicalObject,Repeat> getStoppables () {
-        return stoppables;
-    }
+    //create target area
+    private void createTargetArea() {
+        int environmentWidth = config.getEnvironmentWidth();
+        int environmentHeight = config.getEnvironmentHeight();
 
-    public SEARCH_MECHANISM getSM() {
-        return searchMechanism;
+        final int width, height;
+        final Vec2 position;
+
+        width = 3;
+        height = width;
+        position = new Vec2(8f, 16f);
+
+        // targetArea = new TargetAreaObject(physicsWorld, position, width, height,
+        //         config.getResourceFactory().getTotalResourceValue(), config.getSimulationIterations());
+
+        // Add target area to placement area (trust that space returned since nothing else placed
+        // yet).
+        PlacementArea.Space space = placementArea.getRectangularSpace(width, height, position, 0f);
+        placementArea.placeObject(space, targetArea);
     }
 
     @Override
@@ -238,47 +234,135 @@ public class Simulation extends SimState {
         return environment;
     }
 
-    public SparseGrid2D getConstructionEnvironment() {
-        return constructionEnvironment;
-    }
-
-    public ContToDiscrSpace getDiscr() {
-        return discr;
-    }
-
     /**
-    Get the behavioural characterization for this simulation run
-    **/
-    public PhenotypeBehaviour getSimBehaviour () {
-        return simBehaviour;
+    remeber that some of these might need to be changed if we use the postiteration method that josh mentioned
+    */
+
+    public NoveltyBehaviour runNovel() {
+        final int iterations = config.getSimulationIterations();
+        return noveltySimulation(iterations);
     }
 
-    /**
-     * Run the simulation for the number of iterations specified in the config.
-     */
-    public void run() {
-        final int iterations = (int)parameters[0];
-        // System.out.println("About to start a phenotype test.");
-        runForNIterations(iterations);
-        // System.out.println(construction.getConstructionFitness());
-        // return getFitness();
-    }
+    private NoveltyBehaviour noveltySimulation(int n) {
 
-    /**
-     * Run the simulation for a certain number of iterations.
-     * @param n the number of iterations
-     */
-    public void runForNIterations(int n) {
         start();
 
-        for (int i = 0; i < n; i++) {
+        for(int i = 0; i < n; i++) {
             schedule.step(this);
-
-            if (stopOnceCollected && construction.isComplete()) {
-                break;
-            }
         }
+
+        //get the positions of the robots at the end of the simulation
+        ArrayList<RobotObject> currentRobots = robotFactory.getPlacedRobots();
+        //get the final positions of the resources in the simulation
+        ArrayList<ResourceObject> currentResources = resourceFactory.getPlacedResources();
+
+        //updating construction zones to join neighboursing ones before calculating the score
+        construction.updateConstructionZones();
+
+        //creating the noveltyBehaviour object to be used in the fitness calculation
+        NoveltyBehaviour noveltyBehaviour = new NoveltyBehaviour(currentRobots, currentResources, construction);
+
         finish();
+
+        return noveltyBehaviour;
+    }
+
+        /**
+     * Run the simulation for the number of iterations specified in the config.
+     */
+    public Behaviour runObjective() {
+        //System.out.println("Simulation runObjective(): running method");
+        final int iterations = 15000;
+        return objectiveSimulation(iterations);
+    }
+
+    //just a temp method to test another way of implementing the fitness functions
+    private Behaviour objectiveSimulation(int n) {
+
+        start();
+
+        for(int i = 0; i < n; i++) {
+
+            schedule.step(this);
+        }
+
+        ArrayList<RobotObject> tempBots = robotFactory.getPlacedRobots();
+        ArrayList<ResourceObject> tempResources = resourceFactory.getPlacedResources();
+
+        construction.updateConstructionZones();
+
+        //THIS IS FOR THE OBJECTIVE FITNESS
+        Behaviour behaviour = new Behaviour(construction, schemaConfigNum);
+
+        finish();
+
+        return behaviour;
+
+    }
+
+    public int getTotalNumResources() {
+        return resourceFactory.getPlacedResources().size();
+    }
+
+    public int [] getResTypeCount() {
+        if(schema == null) {
+            System.out.println("Simulation: the schema is null");
+        }
+        return schema.getResQuantity(schemaConfigNum);
+    }
+
+    public ContToDiscrSpace getDiscreteGrid() {
+        return discreteGrid;
+    }
+
+    private float calculateDistance(Vec2 originLocation, Vec2 destLocation) {
+
+        double firstX = originLocation.x;
+        double firstY = originLocation.y;
+
+        double secondX = destLocation.x;
+        double secondY = destLocation.y;
+
+        //System.out.println("FitnessMonitor: the locations = " + firstX + "," + firstY + " -> " + secondX + "," + secondY);
+
+        float distance = (float) Math.sqrt(
+                        Math.pow(firstX-secondX, 2) +
+                        Math.pow(firstY-secondY, 2));
+
+        //System.out.println("FitnessMonitor: distance calculated = " + distance);
+
+        return distance;
+
+    }
+
+    // /**
+    //  * Run the simulation for a certain number of iterations.
+    //  * @param n the number of iterations
+    //  */
+    // public void runForNIterations(int n) {
+    //     start();
+    //     double aveDistOverNIterations = 0D;
+
+    //     for (int i = 0; i < n; i++) {
+
+    //         schedule.step(this);
+
+    //         for(int k = 0; k < robotFactory.getPlacedRobots().size(); k++) {
+    //             Vec2 before = robotFactory.getPlacedRobots().get(k).getPreviousPosition();
+    //             Vec2 after = robotFactory.getPlacedRobots().get(k).getBody().getPosition();
+    //             //fitnessMonitor.incrementDistanceTravelled(before, after);
+    //         }
+
+    //     }
+    //     ArrayList<RobotObject> tempBots = robotFactory.getPlacedRobots();
+    //     //fitnessMonitor.savePickupCounts(tempBots);
+    //     //fitnessMonitor.setPlacedResources(resourceFactory.getPlacedResources()); //retrieving the final positions of the resources after the simulation
+    //     finish();
+    // }
+
+    public boolean allResourcesCollected() {
+        return resourceFactory.getNumberOfResources()
+                == targetArea.getNumberOfContainedResources();
     }
 
     /** If true, this simulation will stop once all the resource objects have been collected. */
@@ -291,79 +375,9 @@ public class Simulation extends SimState {
         this.stopOnceCollected = stopOnceCollected;
     }
 
-    public Vec2 getConstructionZoneCenter(int czNum) {
-        if (construction == null) {
-            return new Vec2 (0f, 0f);
-        }
-        else {
-            return construction.getConstructionZoneCenter(czNum);
-        }
-    }
-
-    public Vec2[] getConstructionZoneCenter() {
-        if (construction == null) {
-            Vec2[] blankReturn = {new Vec2 (0f, 0f)};
-            return blankReturn;
-        }
-        else {
-            return construction.getConstructionZoneCenter();
-        }
-    }
-
-    public double getNumAdjacent () {
-        return construction.getNumAdjacentResources();
-    }
-
-    public double getNumResources() {
-        return resourceFactory.getPlacedResources().size();
-    }
-
-    public double getNumAs () {
-        return construction.getNumAsConnected();
-    }
-
-    public double getNumBs () {
-        return construction.getNumBsConnected();
-    }
-
-    public double getNumCs () {
-        return construction.getNumCsConnected();
-    }
-
-    public double getNumCZsBuilt() {
-        return construction.getConstructionZones().length;
-    }
-
-    /**
-    return the score at this point in the simulation
-    A - average distance between robot and closest resource to it
-    B - average number of times that robots connected to resources
-    C - average distance between resources
-    D - the number of adjacent resources (within construction set)
-    E - the number of adjacent resources that are in the correct schema
-    F - average distance between resources and the construction starting area
-    **/
-    public double getFitness() {
-        // System.out.println("GETTING FITNESS");
-        // return targetArea.getFitnessStats();
-        // System.out.println("Number of connected resources: " + construction.getNumConnectedResources());
-        if (schedule.getSteps() == 0) {
-            return 0;
-        }
-        else {
-            // double [] weights = new double[6];
-            double[] weights = new double[parameters.length - 1];
-            for (int i = 1; i < parameters.length; i++) {
-                weights[i-1] = parameters[i];
-            }
-            return construction.getObjectiveFitness(weights);
-        }
-
-    }
-
     /** Gets the progress of the simulation as a percentage */
     public double getProgressFraction() {
-        return (double) schedule.getSteps() / (int)parameters[0];
+        return (double) schedule.getSteps() / config.getSimulationIterations();
     }
 
     /** Get the number of steps this simulation has been run for. */
@@ -377,5 +391,12 @@ public class Simulation extends SimState {
     public static void main (String[] args) {
         doLoop(Simulation.class, args);
         System.exit(0);
+    }
+
+    /**
+    Method to store the average distances over n iterations
+    **/
+    public void storeDistances(double distances, int n) {
+        this.averageDistancesOverRun = distances/n;
     }
 }

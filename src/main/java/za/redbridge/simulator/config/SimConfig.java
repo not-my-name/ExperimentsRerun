@@ -45,7 +45,7 @@ public class SimConfig extends Config {
     private final Direction targetAreaPlacement;
     private final int targetAreaThickness;
 
-    private int configNumber;
+    private int configNumber = 0;
 
     public static String agentLocation = "";
     private Map resources;
@@ -128,6 +128,8 @@ public class SimConfig extends Config {
         configNumber = (Integer)(config.get("config"));
         resources = (Map) config.get("resources");
 
+        System.out.println("SimConfig: the config number = " + getConfigNumber());
+
         // Robots
         String robot_input = "";
         Map bots = (Map) config.get("robots");
@@ -154,7 +156,7 @@ public class SimConfig extends Config {
             }
 
         }
-        
+
         inputReader.close();
         this.simulationSeed = seed;
         this.simulationIterations = iterations;
@@ -213,12 +215,4 @@ public class SimConfig extends Config {
     public float getRobotMass() { return robotMass; }
 
     public float getRobotRadius() { return robotRadius; }
-
-    @Override
-    public String toString() {
-        String result = "Environment values";
-        result += "\tSchema number: " + (configNumber - 1) + "\n";
-        result += "\t# robots: " + objectsRobots;
-        return result;
-    }
 }

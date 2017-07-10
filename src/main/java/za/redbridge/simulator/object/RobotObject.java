@@ -13,6 +13,7 @@ import java.lang.System;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+
 import java.util.LinkedList;
 
 import sim.engine.SimState;
@@ -28,8 +29,6 @@ import za.redbridge.simulator.portrayal.Drawable;
 import za.redbridge.simulator.portrayal.PolygonPortrayal;
 import za.redbridge.simulator.portrayal.Portrayal;
 import za.redbridge.simulator.sensor.AgentSensor;
-import za.redbridge.simulator.Main.SEARCH_MECHANISM;
-import za.redbridge.simulator.Simulation;
 
 /**
  * Object that represents a finished agent in the environment, including controller and all physical attributes.
@@ -39,8 +38,6 @@ import za.redbridge.simulator.Simulation;
  * Created by jamie on 2014/07/23.
  */
 public class RobotObject extends PhysicalObject {
-
-    private static final long serialVersionUID = 1L;
 
     private static final float WHEEL_RADIUS = 0.03f;
 
@@ -54,10 +51,6 @@ public class RobotObject extends PhysicalObject {
     private static final float GROUND_TRACTION = 0.8f;
     private static final float VELOCITY_RAMPDOWN_START = 0.2f;
     private static final float VELOCITY_RAMPDOWN_END = 0.5f;
-
-    private final Vec2 initialPosition;
-    private final float initX;
-    private final float initY;
 
     private final Phenotype phenotype;
     private final HeuristicPhenotype heuristicPhenotype;
@@ -86,19 +79,27 @@ public class RobotObject extends PhysicalObject {
     private float consumption_modifier = 0;
     private float motor_consumption;
 
-    private int pickupCount = 0;
+    private double numPickups;
 
-    private LinkedList<Vec2> posSampling = new LinkedList<>();
+    //variables to store the initial starting location of the robot object
+    //used to compare for the trajectories
+    private final float initialX;
+    private final float initialY;
+
+    private LinkedList<Vec2> robotTrajectory = new LinkedList<Vec2>();
 
     public RobotObject(World world, Vec2 position, float angle, double radius, double mass,
-            Color color, Phenotype phenotype) {
+            Color color, Phenotype phenotype, SimConfig.Direction targetAreaPlacement) {
         super(createPortrayal(radius, color), createBody(world, position, angle, radius, mass));
 
         this.phenotype = phenotype;
         this.defaultColor = color;
         directionPortrayal.setPaint(invertColor(color));
 
-        heuristicPhenotype = new HeuristicPhenotype(phenotype, this);  //remove targetArea presence
+        heuristicPhenotype = new HeuristicPhenotype(phenotype, this);
+
+	//System.out.println("RobotObject: constructor creating a new robot");
+
         initSensors();
 
         float wheelDistance = (float) (radius * WHEEL_DISTANCE);
@@ -110,16 +111,32 @@ public class RobotObject extends PhysicalObject {
 
         energy_level = init_energy_level;
         motor_consumption = default_motor_consumption;
-        initialPosition = getBody().getPosition();
-        initX = initialPosition.x;
-        initY = initialPosition.y;
+
+        numPickups = 0;
+
+        Vec2 initialPos = getBody().getPosition(); //creating an empty Vec2 to store the updated positions of the robot
+        initialX = initialPos.x;
+        initialY = initialPos.y;
+    }
+
+    public String getActiveHeuristic() {
+        return heuristicPhenotype.getActiveHeuristic();
+    }
+
+    public void incPickups() {
+        //System.out.println("RobotObject: resource picked up");
+        numPickups++;
+    }
+
+    public double getNumPickups() {
+        return numPickups;
     }
 
     private void initSensors() {
 
         for (AgentSensor sensor : phenotype.getSensors())
         {
-           sensor.attach(this); // Bug is fixed :)
+            sensor.attach(this); // Bug is fixed :)
         }
 
         getPortrayal().setChildDrawable(new Drawable() {
@@ -171,12 +188,19 @@ public class RobotObject extends PhysicalObject {
         return (float) ((CirclePortrayal) getPortrayal()).getRadius();
     }
 
+    // public Vec2 getPreviousPosition() {
+    //     return positionHistory;
+    // }
+
     @Override
     public void step(SimState sim) {
-        Simulation simulation = (Simulation)sim;
-        SEARCH_MECHANISM sm = simulation.getSM();
+
+        //positionHistory = new Vec2(getBody().getPosition()); //storing the previous position of the robot
+
         //moves robot
         super.step(sim);
+
+        // System.out.println(getBody().getPosition().x+", "+getBody().getPosition().y);
 
         if(energy_level <= 0) return;
         List<AgentSensor> sensors = phenotype.getSensors();
@@ -185,6 +209,8 @@ public class RobotObject extends PhysicalObject {
 
         // get readings from heuristic phenotype
         Double2D wheelDrives = heuristicPhenotype.step(readings);
+
+        //get readings just from phenotype
         // Double2D wheelDrives = phenotype.step(readings);
 
         if (Math.abs(wheelDrives.x) > 1.0 || Math.abs(wheelDrives.y) > 1.0) {
@@ -196,8 +222,7 @@ public class RobotObject extends PhysicalObject {
 
         updateFriction();
 
-        // if (sim.schedule.getSteps() % 50 == 0 && !heuristicPhenotype.getActiveHeuristic().equalsIgnoreCase("none")) {
-
+        if (sim.schedule.getSteps() % 50 == 0 && !heuristicPhenotype.getActiveHeuristic().equalsIgnoreCase("none")) {
             SpatialPoint sample = new SpatialPoint(this.getBody().getPosition(), samplePoints);
             samplePoints.add(sample);
             //after collecting 4 points (or something), calculate area and flush sample point buffer
@@ -207,15 +232,14 @@ public class RobotObject extends PhysicalObject {
                 samplePolygonAreas.add(calculatePolygonArea(samplePoints));
                 samplePoints.clear();
             }
-        // }
-//        consumeEnergy();
-        if (sm == SEARCH_MECHANISM.NOVELTY || sm == SEARCH_MECHANISM.HYBRID) {
-            if ((sim.schedule.getSteps() % 5 == 0)) {
-                Vec2 currPos = this.getBody().getPosition();
-                posSampling.add(currPos.sub(new Vec2(initX, initY)));
-            }
         }
-        
+
+        // System.out.println("Pos: "+this.getBody().getPosition().x+" "+this.getBody().getPosition().y);
+//        consumeEnergy();
+    }
+
+    public LinkedList<Vec2> getTrajectory() {
+        return this.robotTrajectory;
     }
 
     private void applyWheelDrive(float wheelDrive, Vec2 wheelPosition) {
@@ -287,7 +311,7 @@ public class RobotObject extends PhysicalObject {
         return isBoundToResource;
     }
 
-    // public HeuristicPhenotype getHeuristicPhenotype() { return heuristicPhenotype; }
+    public HeuristicPhenotype getHeuristicPhenotype() { return heuristicPhenotype; }
 
     public double getAverageCoveragePolgygonArea() {
 
@@ -297,10 +321,6 @@ public class RobotObject extends PhysicalObject {
         }
 
         return sum/samplePolygonAreas.size();
-    }
-
-    public LinkedList<Vec2> getPosSampling () {
-        return posSampling;
     }
 
     public void setBoundToResource(boolean isBoundToResource) {
@@ -428,7 +448,8 @@ public class RobotObject extends PhysicalObject {
         List<AgentSensor> sensors = phenotype.getSensors();
         List<List<Double>> readings = new ArrayList<>(sensors.size());
         sensors.forEach(s -> readings.add(s.sense()));
-        Double2D wheelDrives = phenotype.step(readings);
+        Double2D wheelDrives = heuristicPhenotype.step(readings);
+        // Double2D wheelDrives = phenotype.step(readings);
 
         if(wheelDrives == null){
             energy_level -= sensor_consumption;
@@ -441,13 +462,5 @@ public class RobotObject extends PhysicalObject {
     public void setModifier(float modifier)
     {
         consumption_modifier = modifier;
-    }
-
-    public void incrementPickupCount () {
-        this.pickupCount ++;
-    }
-
-    public int getPickupCount () {
-        return this.pickupCount;
     }
 }

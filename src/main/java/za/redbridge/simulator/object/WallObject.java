@@ -15,8 +15,6 @@ import za.redbridge.simulator.portrayal.Portrayal;
  */
 public class WallObject extends PhysicalObject {
 
-    private static final long serialVersionUID = 1L;
-
     public WallObject(World world, Double2D pos, Double2D v1, Double2D v2) {
         super(createPortrayal(v1, v2), createBody(world, pos, v1, v2));
     }

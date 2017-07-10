@@ -15,7 +15,6 @@ import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
-import sim.util.Double2D;
 
 import sim.engine.SimState;
 import za.redbridge.simulator.FitnessStats;
@@ -66,10 +65,6 @@ public class TargetAreaObject extends PhysicalObject implements Collideable {
         aabb = getBody().getFixtureList().getAABB(0);
     }
 
-    // public TargetAreaObject (World world, ResourceObject r1, ResourceObject r2, int maxSteps) {
-    //     Vec2 r1Pos = r1.getBody().getPosition();
-    // }
-
     protected static Portrayal createPortrayal(int width, int height) {
         Paint areaColour = new Color(31, 110, 11, 100);
         return new RectanglePortrayal(width, height, areaColour, true);
@@ -91,11 +86,6 @@ public class TargetAreaObject extends PhysicalObject implements Collideable {
     public void step(SimState simState) {
         super.step(simState);
 
-        Simulation s = (Simulation) simState;
-        getPortrayal().setTransform(getBody().getTransform());
-        float objX = Vec2.dot(this.getBody().getPosition(), new Vec2(1.0f, 0.0f));
-        float objY = (float)s.getEnvironment().getHeight() - Vec2.dot(this.getBody().getPosition(), new Vec2(0.0f, 1.0f));
-        s.getEnvironment().setObjectLocation(this, new Double2D(objX, objY));
         // Check if any objects have passed into the target area completely or have left
         // for (Fixture fixture : watchedFixtures) {
         //     ResourceObject resource = (ResourceObject) fixture.getBody().getUserData();
@@ -135,7 +125,7 @@ public class TargetAreaObject extends PhysicalObject implements Collideable {
             }
 
             // Mark resource as collected (this breaks the joints)
-            resource.setCollected(true);
+            resource.setConstructed(true);
             resource.getPortrayal().setPaint(Color.CYAN);
             resource.getPortrayal().setEnabled(false);
             // resource = null; // Naeem Ganey code.
@@ -149,7 +139,7 @@ public class TargetAreaObject extends PhysicalObject implements Collideable {
 
             if(resource.getValue() > 0) resource_count--;
             // Mark resource as no longer collected
-            resource.setCollected(false);
+            resource.setConstructed(false);
             resource.getPortrayal().setPaint(Color.MAGENTA);
 
             Set<RobotObject> pushingBots = findRobotsNearResource(resource);

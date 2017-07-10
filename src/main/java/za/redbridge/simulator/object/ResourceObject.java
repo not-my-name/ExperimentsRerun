@@ -7,34 +7,31 @@ import org.jbox2d.dynamics.World;
 import org.jbox2d.dynamics.joints.Joint;
 import org.jbox2d.dynamics.joints.JointDef;
 import org.jbox2d.dynamics.joints.WeldJointDef;
-import org.jbox2d.collision.AABB;
-import org.jbox2d.collision.shapes.MassData;
-import org.jbox2d.common.Transform;
-import org.jbox2d.common.Rot;
 
 import java.awt.Color;
 import java.awt.Paint;
-import java.awt.geom.Rectangle2D;
 import java.time.temporal.ValueRange;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Set;
 import java.util.ArrayList;
-import java.util.LinkedList;
-import java.util.Arrays;
+//CONCURRENCY CHANGES
+import java.util.concurrent.CopyOnWriteArrayList;
+import java.util.Iterator;
+
+import java.util.*;
 
 import sim.engine.SimState;
 import za.redbridge.simulator.Simulation;
-import za.redbridge.simulator.PlacementArea;
 import za.redbridge.simulator.physics.BodyBuilder;
 import za.redbridge.simulator.physics.FilterConstants;
 import za.redbridge.simulator.portrayal.PolygonPortrayal;
 import za.redbridge.simulator.portrayal.Portrayal;
-import za.redbridge.simulator.portrayal.DPPortrayal;
 import za.redbridge.simulator.portrayal.RectanglePortrayal;
-import za.redbridge.simulator.physics.AABBUtil;
-import za.redbridge.simulator.Main.SEARCH_MECHANISM;
-import sim.engine.Steppable;
+
+import org.jbox2d.collision.AABB;
+
+import org.jbox2d.common.Transform;
 
 /**
  * Object to represent the resources in the environment. Has a value and a weight.
@@ -42,8 +39,6 @@ import sim.engine.Steppable;
  * Created by jamie on 2014/07/23.
  */
 public class ResourceObject extends PhysicalObject {
-
-    private static final long serialVersionUID = 1L;
 
     //private static final Paint DEFAULT_COLOUR = new Color(255, 235, 82);
     private static final Paint DEFAULT__TRASH_COLOUR = new Color(43, 54, 50);
@@ -61,7 +56,15 @@ public class ResourceObject extends PhysicalObject {
     private final AnchorPoint[] topAnchorPoints;
     private final AnchorPoint[] bottomAnchorPoints;
 
-    private final WeldPoint[] weldPoints;
+    // private final WeldPoint[] leftWeldPoints;
+    // private final WeldPoint[] rightWeldPoints;
+    // private final WeldPoint[] topWeldPoints;
+    // private final WeldPoint[] bottomWeldPoints;
+
+    private final WeldPoint [] weldPoints;
+
+    private final int weldPointN = 2;
+    private final ArrayList<WeldPoint[]> weldList;
 
     private final Vec2 pool = new Vec2();
 
@@ -72,35 +75,37 @@ public class ResourceObject extends PhysicalObject {
     private final String type;
 
     private double adjustedValue;
-    private boolean isConstructed;
+
     private boolean fullyWelded;
-    private boolean hasMoved;
+    private boolean isConstructed; //if it is part of the construction zone
+    private boolean hasMoved; //if the robot has moved it
 
     private final Map<RobotObject, JointDef> pendingJoints;
     private final Map<RobotObject, Joint> joints;
+
     private final Map<Integer, String[]> adjacencyMap;
 
-    private final DetectionPoint[] detectionPoints;
-    private String[] adjacentList;
-    private ResourceObject[] adjacentResources;
+
     private boolean connected;
-    private ResourceObject closestResource;
 
-    private final AABB aabb;
+    private final DetectionPoint[] detectionPoints;
+    private String[] adjacentResources;
+    private ResourceObject[] adjacentList;
 
-    private boolean isAligned = false;
-    private boolean isClose = false;
+    private LinkedList<Vec2> resourceTrajectory = new LinkedList<Vec2>();
 
-    private int numStepsPushed = 0;
-    private int czNumber = -1;
-    private int numSidesConnectedTo = 0;
+    private int countConnected; //var to count the number of resources connected
+    private Vec2 initialPos; //starting location of the resource
 
-    private LinkedList<Vec2> pushedSampling = new LinkedList<>();
-    private final Vec2 initialPos;
-    private final float initX;
-    private final float initY;
+    //variables to store the initial starting location of the resource object
+    private final float initialX;
+    private final float initialY;
 
-    private boolean isVisited = false;
+    private int constructionZoneID = -1; //keep track of which construction zone this resource is connected to
+
+    private boolean visited; //variable to check whether or not this resource object has been traversed
+
+    //private Vec2 gridPosition; //variable to keep track of the resource's position in the grid for later comparison
 
     // is a hack
     // private ArrayList<ResourceObject> otherResources = new ArrayList<ResourceObject>();
@@ -115,7 +120,10 @@ public class ResourceObject extends PhysicalObject {
         this.value = value;
         this.type = type;
 
-        aabb = getBody().getFixtureList().getAABB(0);
+        this.fullyWelded = false;
+        this.isConstructed = false;
+        this.hasMoved = false;
+        this.visited = false;
 
         adjustedValue = value;
 
@@ -125,9 +133,11 @@ public class ResourceObject extends PhysicalObject {
         bottomAnchorPoints = new AnchorPoint[pushingRobots];
         initAnchorPoints();
 
-        this.fullyWelded = false;
-        this.isConstructed = false;
-        this.hasMoved = false;
+        // leftWeldPoints = new WeldPoint[weldPointN];
+        // rightWeldPoints = new WeldPoint[weldPointN];
+        // topWeldPoints = new WeldPoint[weldPointN];
+        // bottomWeldPoints = new WeldPoint[weldPointN];
+        weldList = new ArrayList<WeldPoint[]>();
 
         weldPoints = new WeldPoint[4];
         initWeldPoints();
@@ -135,18 +145,12 @@ public class ResourceObject extends PhysicalObject {
         detectionPoints = new DetectionPoint[4];
         initDetectionPoints();
 
-        adjacentList = new String[4];
-        adjacentResources = new ResourceObject[4];
-
-        for(int i=0;i<adjacentList.length;i++){
-            adjacentList[i] = "_";
-            adjacentResources[i] = null;
-        }
-
-        closestResource = null;
+        adjacentResources = new String[4];
 
         joints = new HashMap<>(pushingRobots);
         pendingJoints = new HashMap<>(pushingRobots);
+
+        adjacentList = new ResourceObject[4];
 
         //Populate the 4 possible adjacency maps
         adjacencyMap = new HashMap<>(4);
@@ -158,15 +162,16 @@ public class ResourceObject extends PhysicalObject {
         adjacencyMap.put(1, secondQuad);
         adjacencyMap.put(2, thirdQuad);
         adjacencyMap.put(3, fourthQuad);
-        
+
+        countConnected = 0;
 
         if (DEBUG) {
             getPortrayal().setChildDrawable(new DebugPortrayal(Color.BLACK, false));
         }
 
         initialPos = getBody().getPosition();
-        initX = initialPos.x;
-        initY = initialPos.y;
+        initialX = initialPos.x;
+        initialY = initialPos.y;
     }
 
     protected static Portrayal createPortrayal(double width, double height, String type) {
@@ -202,10 +207,6 @@ public class ResourceObject extends PhysicalObject {
                 .build(world);
     }
 
-    // public void initResources(ArrayList<ResourceObject> resources){
-    //     otherResources = resources;
-    // }
-
     private void initAnchorPoints() {
         float halfWidth = (float) width / 2;
         float halfHeight = (float) height / 2;
@@ -236,47 +237,32 @@ public class ResourceObject extends PhysicalObject {
 
     private void initDetectionPoints(){
         float halfWidth = (float) width / 2;
-        float dWidth = (float) width / 2;
         float halfHeight = (float) height / 2;
-        float dHeight = (float) height / 2;
         float xspacing = halfWidth;
         float yspacing = halfHeight;
 
-        Vec2 leftMidPos = new Vec2(-halfWidth-xspacing, 0);
-        Vec2 leftUPos = new Vec2(-halfWidth-xspacing, 0 + dHeight);
-        Vec2 leftBPos = new Vec2(-halfWidth-xspacing, 0 - dHeight);
+        Vec2 leftPos = new Vec2(-halfWidth-xspacing, -halfHeight);
+        Vec2 rightPos = new Vec2(halfWidth+xspacing, -halfHeight);
+        Vec2 topPos = new Vec2(0, halfHeight+yspacing);
+        Vec2 bottomPos = new Vec2(0, -halfHeight-yspacing);
 
-        Vec2 rightMidPos = new Vec2(halfWidth+xspacing, 0);
-        Vec2 rightUPos = new Vec2(halfWidth+xspacing, 0 + dHeight);
-        Vec2 rightBPos = new Vec2(halfWidth+xspacing, 0 - dHeight);
+        DetectionPoint leftPoint = new DetectionPoint(leftPos, getBody());
+        DetectionPoint rightPoint = new DetectionPoint(rightPos, getBody());
+        DetectionPoint topPoint = new DetectionPoint(topPos, getBody());
+        DetectionPoint bottomPoint = new DetectionPoint(bottomPos, getBody());
 
-        Vec2 topMidPos = new Vec2(0, halfHeight+yspacing);
-        Vec2 topLPos = new Vec2(-dWidth, halfHeight+yspacing);
-        Vec2 topRPos = new Vec2(dWidth, halfHeight+yspacing);
-
-        Vec2 bottomMidPos = new Vec2(0, -halfHeight-yspacing);
-        Vec2 bottomLPos = new Vec2(-dWidth, -halfHeight-yspacing);
-        Vec2 bottomRPos = new Vec2(dWidth, -halfHeight-yspacing);
-
-        Vec2 [] leftDPoints = {leftMidPos, leftUPos, leftBPos};
-
-        Vec2 [] rightDPoints = {rightMidPos, rightUPos, rightBPos};
-
-        Vec2 [] topDPoints = {topMidPos, topLPos, topRPos};
-
-        Vec2 [] bottomDPoints= {bottomMidPos, bottomLPos, bottomRPos};
-
-        detectionPoints[0] = new DetectionPoint (leftDPoints, this.getBody(), 0, 0);
-        detectionPoints[1] = new DetectionPoint (rightDPoints, this.getBody(), 0, 1);
-        detectionPoints[2] = new DetectionPoint (topDPoints, this.getBody(), 0, 2);
-        detectionPoints[3] = new DetectionPoint (bottomDPoints, this.getBody(), 0, 3);
+        detectionPoints[0] = leftPoint;
+        detectionPoints[1] = rightPoint;
+        detectionPoints[2] = topPoint;
+        detectionPoints[3] = bottomPoint;
     }
 
     private void initWeldPoints(){
+
         float halfWidth = (float) width / 2;
         float halfHeight = (float) height / 2;
-        float xspacing = 0.01f;
-        float yspacing = 0.01f;
+        float xspacing = 0.1f;
+        float yspacing = 0.1f;
 
         Vec2 leftPos = new Vec2(-halfWidth-xspacing, 0);
         Vec2 rightPos = new Vec2(halfWidth+xspacing, 0);
@@ -294,166 +280,99 @@ public class ResourceObject extends PhysicalObject {
         weldPoints[3] = bottomPoint;
     }
 
-    /**
-    Dan's method
-    **/
-    // public void updateAdjacent(ArrayList<ResourceObject> resourceArray){
-    //     for(int i=0;i<adjacentResources.length;i++){
-    //         adjacentResources[i] = "0";
-    //     }
-
-    //     for(int j=0;j<resourceArray.size();j++){
-    //         if(this != resourceArray.get(j)){
-    //             Body resourceBody = resourceArray.get(j).getBody();
-    //             Vec2 resourcePosition = resourceBody.getPosition();
-    //             for(int i=0;i<detectionPoints.length;i++){
-    //                 if (resourcePosition.sub(detectionPoints[i].getRelativePosition(this.getBody().getPosition())).length() < 0.3f) {
-    //                     adjacentResources[i] = resourceArray.get(j).getType();
-    //                 }
-    //             }
-    //         }
-    //     }
+    // public void setGridPosition(int[] gridPos) {
+    //
+    //     gridPosition = new Vec2();
+    //     gridPosition.set( (float) gridPos[0], (float) gridPos[1] );
     // }
 
-    public void updateAdjacent(ArrayList<ResourceObject> resourceArray){
-        for(int i=0;i<adjacentList.length;i++){
-            adjacentList[i] = "_";
-            adjacentResources[i] = null;
-            numSidesConnectedTo = 0;
-        }
-        // System.out.println("THIS: " + this);
-        for(int j=0;j<resourceArray.size();j++){
-            if(this != resourceArray.get(j)){
-                ResourceObject otherRes = resourceArray.get(j);
-                if (isClosest(otherRes)) {
-                    closestResource = otherRes;
-                }
-                isAdjacentAndAligned(this, otherRes);
-            }
-        }
+    // public Vec2 getGridPosition() {
+    //     return gridPosition;
+    // }
 
-        getConnectionReason();
-        for (int i = 0; i < adjacentList.length; i++) {
-            numSidesConnectedTo += adjacentList[i].equals("_") ? 0 : 1;
-        }
+    public void setVisited(boolean flag) {
+        visited = flag;
     }
 
-    public String getConnectionReason() {
-        if (closestResource == null) {
-            return "";
-        }
-        else {
-            String reason = "";
-            boolean isAligned = false;
-            boolean isClose = false;
-
-            Body thisBody = this.getBody();
-            Vec2 thisPos = thisBody.getPosition();
-            AABB thisAABB = this.getAabb();
-            float thisWidth = (float)this.getWidth();
-
-            Body closestBody = closestResource.getBody();
-            Vec2 closestPos = closestBody.getPosition();
-            AABB closestAABB = closestResource.getAabb();
-            float closestWidth = (float)closestResource.getWidth();
-
-            // System.out.println("\tcomparing with " + closest);
-            // System.out.println(this);
-            //test for closeness
-            int sideClosestToclosest = this.getSideNearestTo(closestPos);
-            int sideClosestTothis = closestResource.getSideNearestTo(thisPos);
-            // System.out.println("\t\t" + sideClosestTothis + " " + sideClosestToclosest);
-
-            if (pushedByMaxRobots()) {
-                reason += "Is pushed by max robots ";
-            }
-
-            if ((sideClosestTothis >= 0)&&(sideClosestToclosest >= 0)) {
-                // System.out.println(this + " " + closest);
-                // if (sideClosestToclosest > 0) {
-                //     sideClosestToclosest--;
-                // }
-                // if (sideClosestTothis > 0) {
-                //     sideClosestTothis--;
-                // }
-                // if (sideClosestTothis < 0) {
-                //     sideClosestTothis = Math.abs(sideClosestTothis) - 1;
-                // }
-                // if (sideClosestToclosest < 0) {
-                //     sideClosestToclosest = Math.abs(sideClosestToclosest) - 1;
-                // }
-                
-                isClose = true;
-            }
-            else {
-                reason += "Is not near enough. ";
-                isClose = false;
-            }
-
-            if (isClose) {
-                reason += "Is near enough ";
-                //test for alignment
-                float thisAngle = thisBody.getAngle();
-                float closestAngle = closestBody.getAngle();
-
-                float angleDiff = thisAngle - closestAngle;
-                float divBy90 = (float)Math.abs(angleDiff/(((float)Math.PI)/2));
-
-                float error = divBy90 - (float)Math.floor(divBy90);
-
-                if ((Math.abs(error) < 0.02)||(Math.abs(error) > 0.98)) {
-                    reason += "is aligned.";
-                    isAligned = true;
-                }
-                else {
-                    reason += "is not aligned.";
-                }
-            }
-
-            // if ((isAligned == true) && (isClose == true)) {
-            //     r1.setAdjacency(closest, closest.getType(), sideClosestToclosest);
-            //     closest.setAdjacency(r1, r1.getType(), sideClosestToR1);
-            //     return true;
-            // }
-            // else {
-
-            //     return false;
-            // }
-            return reason;
-        }
+    public boolean getVisited() {
+        return visited;
     }
 
-    public boolean isVisited() {
-        return isVisited;
+    public int getConstructionZoneID() {
+        return constructionZoneID;
     }
 
-    public void setVisited(boolean val) {
-        isVisited = val;
+    public void setConstructionZoneID(int id) {
+        constructionZoneID = id;
     }
 
-    public int getNumSidesConnectedTo() {
-        return numSidesConnectedTo;
-    }
-
-    public AABB getAabb() {
-        return aabb;
-    }
-
-    public boolean isClosest(ResourceObject otherRes) {
-        Vec2 otherResPos = otherRes.getBody().getPosition();
-        float distance = this.getBody().getPosition().sub(otherResPos).length();
-        float currClosestDistance = 50000f;
-        if (closestResource != null) {
-            currClosestDistance = this.getBody().getPosition().sub(closestResource.getBody().getPosition()).length();
-        }
-        
-        if (distance < currClosestDistance) {
-            return true;
-        }
-        else {
-            return false;
-        }
-    }
+    // public String getConnectionReason() {
+    //
+    //         String reason = "";
+    //         boolean isAligned = false;
+    //         boolean isClose = false;
+    //
+    //         Body thisBody = this.getBody();
+    //         Vec2 thisPos = thisBody.getPosition();
+    //         AABB thisAABB = this.getAabb();
+    //         float thisWidth = (float)this.getWidth();
+    //
+    //         Body closestBody = closestResource.getBody();
+    //         Vec2 closestPos = closestBody.getPosition();
+    //         AABB closestAABB = closestResource.getAabb();
+    //         float closestWidth = (float)closestResource.getWidth();
+    //
+    //         // System.out.println("\tcomparing with " + closest);
+    //         // System.out.println(this);
+    //         //test for closeness
+    //         int sideClosestToclosest = this.getSideNearestTo(closestPos);
+    //         int sideClosestTothis = closestResource.getSideNearestTo(thisPos);
+    //         // System.out.println("\t\t" + sideClosestTothis + " " + sideClosestToclosest);
+    //
+    //         if (pushedByMaxRobots()) {
+    //             reason += "Is pushed by max robots ";
+    //         }
+    //
+    //         if ((sideClosestTothis >= 0)&&(sideClosestToclosest >= 0)) {
+    //
+    //             isClose = true;
+    //         }
+    //         else {
+    //             reason += "Is not near enough. ";
+    //             isClose = false;
+    //         }
+    //
+    //         if (isClose) {
+    //             reason += "Is near enough ";
+    //             //test for alignment
+    //             float thisAngle = thisBody.getAngle();
+    //             float closestAngle = closestBody.getAngle();
+    //
+    //             float angleDiff = thisAngle - closestAngle;
+    //             float divBy90 = (float)Math.abs(angleDiff/(((float)Math.PI)/2));
+    //
+    //             float error = divBy90 - (float)Math.floor(divBy90);
+    //
+    //             if ((Math.abs(error) < 0.02)||(Math.abs(error) > 0.98)) {
+    //                 reason += "is aligned.";
+    //                 isAligned = true;
+    //             }
+    //             else {
+    //                 reason += "is not aligned.";
+    //             }
+    //         }
+    //
+    //         // if ((isAligned == true) && (isClose == true)) {
+    //         //     r1.setAdjacency(closest, closest.getType(), sideClosestToclosest);
+    //         //     closest.setAdjacency(r1, r1.getType(), sideClosestToR1);
+    //         //     return true;
+    //         // }
+    //         // else {
+    //
+    //         //     return false;
+    //         // }
+    //         return reason;
+    // }
 
     /**
     Method that checks whether two resources are aligned and close enough to eachother
@@ -470,12 +389,10 @@ public class ResourceObject extends PhysicalObject {
 
         Body r1Body = r1.getBody();
         Vec2 r1Pos = r1Body.getPosition();
-        AABB r1AABB = r1.getAabb();
         float r1Width = (float)r1.getWidth();
 
         Body r2Body = r2.getBody();
         Vec2 r2Pos = r2Body.getPosition();
-        AABB r2AABB = r2.getAabb();
         float r2Width = (float)r2.getWidth();
 
         // System.out.println(r1);
@@ -499,7 +416,7 @@ public class ResourceObject extends PhysicalObject {
             // if (sideClosestToR2 < 0) {
             //     sideClosestToR2 = Math.abs(sideClosestToR2) - 1;
             // }
-            
+
             isClose = true;
         }
         else {
@@ -520,9 +437,9 @@ public class ResourceObject extends PhysicalObject {
             //     isAligned = true;
             // }
 
-            r1.setAdjacency(r2, r2.getType(), sideClosestToR2);
-            r2.setAdjacency(r1, r1.getType(), sideClosestToR1);
-            
+            //r1.setAdjacency(r2, r2.getType(), sideClosestToR2);
+            //r2.setAdjacency(r1, r1.getType(), sideClosestToR1);
+
             return true;
         }
         else {
@@ -553,12 +470,12 @@ public class ResourceObject extends PhysicalObject {
         int closestSide = -1;
 
         for (int i = 0; i < detectionPoints.length; i++) {
-            Vec2 [] dpPos = detectionPoints[i].getRelativePositions();
+            //Vec2 [] dpPos = detectionPoints[i].getRelativePositions();
 
             if (detectionPoints[i].isNearCenter(otherResPos)) {
                 result = true;
                 int angleQuadrant = (int)roundAngle(getBody().getAngle());
-                String sideName = adjacencyMap.get(angleQuadrant)[detectionPoints[i].getSide()];
+                String sideName = adjacencyMap.get(angleQuadrant)[i];
                 if (sideName.equals("L")) {
                     side = 0;
                 }
@@ -571,8 +488,8 @@ public class ResourceObject extends PhysicalObject {
                 else {
                     side = 3;
                 }
-                break; 
-            }           
+                break;
+            }
         }
 
         if (result) {
@@ -585,109 +502,81 @@ public class ResourceObject extends PhysicalObject {
     }
 
     /**
-    Used to group rotation angles of the resource into 4 main blocks for calculating the correct adjacent sides
+    Sets the adjacent lists based on an array of resources taken from the corresponding Von Neumann points in the
+    discritized construction space.
     **/
-    public double roundAngle (double a) {
-        double divBy2Pi = a/(Math.PI*2);
-        double fractionalPart = divBy2Pi % 1;
-        // double integralPart = divBy2Pi - fractionalPart;
-        double refAngle;
-        if (fractionalPart < 0) {
-            refAngle = Math.PI*2 + fractionalPart*Math.PI*2;
+    public void setAdjacency(ResourceObject[] adjRes) {
+        for (int i = 0; i < adjRes.length; i++) {
+            if (adjRes[i] != null) {
+                adjacentResources[i] = adjRes[i].getType();
+                adjacentList[i] = adjRes[i];
+            }
         }
-        else {
-            refAngle = fractionalPart*(Math.PI*2);
-        }
+    }
 
-        double d45 = Math.PI/4;
-        double d135 = 3*Math.PI/4;
-        double d225 = 5*Math.PI/4;
-        double d315 = 7*Math.PI/4;
+    //ALIGNMENT
+    public void setAdjacency (ResourceObject r, String rType, int i) {
+        adjacentList[i] = r;
+        adjacentResources[i] = rType;
+    }
 
-        double returnQuad;
+    public void updateAdjacent(ArrayList<ResourceObject> resourceArray){
 
-        if ((refAngle < d45)||(refAngle > d315)) {
-            returnQuad = 0D;
-        }
-        else if ((refAngle >= d45)&&(refAngle < d135)) {
-            returnQuad = 1D;
-        }
-        else if ((refAngle >= d135)&&(refAngle < d225)) {
-            returnQuad = 2D;
-        }
-        else {
-            returnQuad = 3D;
+        //System.out.println("ResourceObject: updating the adjacent resources");
+
+        countConnected = 0;
+
+        for(int i=0;i<adjacentResources.length;i++){
+            adjacentResources[i] = "_";
+            adjacentList[i] = null;
         }
 
-        return returnQuad;
+        for(int j=0;j<resourceArray.size();j++){
+
+            if(this == resourceArray.get(j)){
+                continue;
+            }
+            else {
+
+                ResourceObject otherResource = resourceArray.get(j);
+                Body resourceBody = otherResource.getBody();
+                Vec2 resourcePosition = resourceBody.getPosition();
+
+                for(int i = 0; i < 4; i++) {
+
+                    if (resourcePosition.sub(detectionPoints[i].getRelativePosition(this.getBody())).length() < (0.1f+Simulation.DISCR_GAP) ) {
+
+                        int side = getSideNearestTo(resourcePosition);
+
+                        if(side > -1) {
+                            // System.out.println("ResourceObject: printing the neighbours for: " + this);
+                            // System.out.println("ResourceObject: PRINTING THE NEIGHBOURS BEFORE: " + Arrays.toString(adjacentList));
+                            // System.out.println("ResourceObject: PRINTING THE NEIGHBOURS BEFORE: " + Arrays.toString(adjacentResources));
+                            if(isAdjacentAndAligned(this, otherResource)) {
+                                adjacentList[i] = otherResource;
+                                adjacentResources[i] = otherResource.getType();
+                                countConnected++;
+                            }
+                            // System.out.println("ResourceObject: PRINTING THE NEIGHBOURS AFTER: " + Arrays.toString(adjacentList));
+                            // System.out.println("ResourceObject: PRINTING THE NEIGHBOURS AFTER: " + Arrays.toString(adjacentResources));
+                            // System.out.println("");
+                        }
+                    }
+                }
+            }
+        }
     }
 
-    public ResourceObject getClosestResource () {
-        return closestResource;
+    public boolean isFullyWelded(){
+        return fullyWelded;
     }
 
-    public WeldPoint [] getWeldPoints(){
-        return weldPoints;
+    public boolean hasMoved(){
+        return this.hasMoved;
     }
 
-    public int getCzNumber() {
-        return czNumber;
-    }
-
-    public void setStatic(){
-        getBody().setType(BodyType.STATIC);
-        // this.isConstructed = true;
-    }
-
-    /**
-     Check whether this object has been constructed (part of the constructed structure)
-     @return true if the object has been marked as constructed (it his adjacent to a resource in the construction zone)
-     */
-    public boolean isConstructed(){
-        return this.isConstructed;
-    }
-
-    public void setConstructed(){
-        this.isConstructed = true;
-    }
-
-    public void setCzNumber (int czNumber) {
-        // System.out.println(this + ": SETTING CZ NUMBER = " + czNumber);
-        this.czNumber = czNumber;
-    }
-
-    public DetectionPoint[] getDPs() {
-        return detectionPoints;
-    }
-
-    public double getBodyAngle () {
-        return roundAngle((double)this.getBody().getAngle());
-    }
-
-    // checks if another resource is aligned with one side
     public boolean checkPotentialWeld(ResourceObject otherResource){
-        // boolean t = false;
-        // int [] points = {0,0,0,0};
-        // Body resourceBody = other.getBody();
-        // Vec2 resourcePosition = resourceBody.getPosition();
-        // Vec2 resourcePositionLocal = getCachedLocalPoint(resourcePosition);
-        // // System.out.println(resourcePositionLocal.sub(weldList.get(0)[0].position).length());
-        // // System.out.println(resourcePositionLocal.sub(weldList.get(0)[1].position).length());
-        // for(int j=0;j<weldList.size();j++){
-        //     for(int i=0;i<weldPointN;i++){
-        //         if (resourcePositionLocal.sub(weldList.get(j)[i].position).length() < 0.6f) {
-        //             points[j] += 1;
-        //         }
-        //     }
-        // }
 
-        // for(int i=0;i<4;i++){
-        //     if(points[i]==2){
-        //         t = true;
-        //     }
-        // }
-
-        // return t;
         for(int i=0;i<weldPoints.length;i++){
             for(int j=0;j<otherResource.getWeldPoints().length;j++){
                 Vec2 otherResourcePosition = otherResource.getWeldPoints()[j].getRelativePosition();
@@ -701,92 +590,70 @@ public class ResourceObject extends PhysicalObject {
         return false;
     }
 
-    /**
-    Sets the adjacent lists based on an array of resources taken from the corresponding Von Neumann points in the 
-    discritized construction space.
-    **/
-    public void setAdjacency(ResourceObject[] adjRes) {
-        for (int i = 0; i < adjRes.length; i++) {
-            if (adjRes[i] != null) {
-                adjacentList[i] = adjRes[i].getType();
-                adjacentResources[i] = adjRes[i];
-            }
-        }
+    public WeldPoint [] getWeldPoints(){
+        return weldPoints;
     }
-
-    //ALIGNMENT
-    public void setAdjacency (ResourceObject r, String rType, int i) {
-        adjacentList[i] = rType;
-        adjacentResources[i] = r;
-    }
-
-    public String getConnected1() {
-        return adjacentList[0];
-    }
-    public String getConnected2() {
-        return adjacentList[1];
-    }
-    public String getConnected3() {
-        return adjacentList[2];
-    }
-    public String getConnected4() {
-        return adjacentList[3];
-    }
-
-    // public String getDetectionPointPosL() {
-    //     String result = "";
-    //     Vec2[] dps = detectionPoints[0].getRelativePositions();
-    //     for (int i = 0; i < dps.length; i++) {
-    //         result += AABBUtil.testPoint(dps[i], closestResource.getAabb()) + " ";
-    //     }
-    //     return result;
-    //     // return Arrays.toString(detectionPoints[0].getRelativePositions(this.getBody().getPosition()));
-    // }
-
-    // public String getDetectionPointPosR() {
-    //     String result = "";
-    //     Vec2[] dps = detectionPoints[1].getRelativePositions();
-    //     for (int i = 0; i < dps.length; i++) {
-    //         result += AABBUtil.testPoint(dps[i], closestResource.getAabb()) + " ";
-    //     }
-    //     return result;
-    //     // return Arrays.toString(detectionPoints[1].getRelativePositions());
-    // }
-
-    // public String getDetectionPointPosT() {
-    //     String result = "";
-    //     Vec2[] dps = detectionPoints[2].getRelativePositions();
-    //     for (int i = 0; i < dps.length; i++) {
-    //         result += AABBUtil.testPoint(dps[i], closestResource.getAabb()) + " ";
-    //     }
-    //     return result;
-    //     // return Arrays.toString(detectionPoints[2].getRelativePositions());
-    // }
-
-    // public String getDetectionPointPosB() {
-    //     String result = "";
-    //     Vec2[] dps = detectionPoints[3].getRelativePositions();
-    //     for (int i = 0; i < dps.length; i++) {
-    //         result += AABBUtil.testPoint(dps[i], closestResource.getAabb()) + " ";
-    //     }
-    //     return result;
-    //     // return Arrays.toString(detectionPoints[3].getRelativePositions());
-    // }
-
-    public ResourceObject[] getAdjacentResources() {
-        return adjacentResources;
-    }
-
-    public String [] getAdjacentList(){
-        return adjacentList;
-    }
-
-    // public String[] domadjacentList() {
-    //     return adjacentList;
-    // }
 
     public String getType(){
         return type;
+    }
+
+    public void setStatic(){
+        getBody().setType(BodyType.STATIC);
+        this.isConstructed = true;
+    }
+
+    public boolean isConstructed(){
+        return this.isConstructed;
+    }
+
+    public void setConstructed(){
+        this.isConstructed = true;
+    }
+
+    public void setConstructed(boolean val) {
+        this.isConstructed = val;
+    }
+
+    public String getConnectedLeft() {
+        return adjacentResources[0];
+    }
+
+    public String getConnectedRight() {
+        return adjacentResources[1];
+    }
+
+    public String getConnectedTop() {
+        return adjacentResources[2];
+    }
+
+    public String getConnectedBottom() {
+        return adjacentResources[3];
+    }
+
+    public int getNumConnected() {
+        return countConnected;
+    }
+
+    public int getNumAdjacent() {
+
+        int adjCount = 0;
+        for(int k = 0; k < 4; k++) {
+
+            if( !adjacentResources[k].equals("_") ) { //if the adjacent side of the resource is not empty
+                adjCount++;
+            }
+        }
+
+        return adjCount;
+    }
+
+    public String [] getAdjacentResources(){
+        return adjacentResources;
+    }
+
+    public ResourceObject[] getAdjacentList() {
+        return adjacentList;
     }
 
     private AnchorPoint[] getAnchorPointsForSide(Side side) {
@@ -816,8 +683,6 @@ public class ResourceObject extends PhysicalObject {
 
     @Override
     public void step(SimState simState) {
-        Simulation s = (Simulation) simState;
-        SEARCH_MECHANISM sm = s.getSM();
         super.step(simState);
 
         if (!pendingJoints.isEmpty()) {
@@ -839,27 +704,6 @@ public class ResourceObject extends PhysicalObject {
             joints.clear();
         }
 
-        //If a resource is currently being pushed by 1+ robots, log its position every 5 timesteps (need a check if we're doing novelty search)
-        // if (getNumberPushingRobots() > 0) {
-            // if ((numStepsPushed % 5 == 0)&&(!isConstructed)) {
-        /**
-        DECISION!!!
-        **/
-        if (sm == SEARCH_MECHANISM.NOVELTY || sm == SEARCH_MECHANISM.HYBRID) {
-            if ((simState.schedule.getSteps() % 5 == 0)) {
-                Vec2 currPos = this.getBody().getPosition();
-                pushedSampling.add(currPos.sub(new Vec2(initX, initY)));
-            }
-        }
-            
-            //if in construction zone, take the distance from the centre of the constructionZone
-            // else if ((simState.schedule.getSteps() % 5 == 0)&&(isConstructed)) {
-            //     Vec2 currPos = this.getBody().getPosition();
-            //     Vec2 czPos = s.getConstructionZoneCenter(czNumber);
-            //     pushedSampling.add(czPos.sub(currPos));
-            // }
-            // numStepsPushed++;
-        // }
         // check if all weld points have been taken
         if(fullyWelded == false){
             for(int i=0;i<weldPoints.length;i++){
@@ -872,6 +716,23 @@ public class ResourceObject extends PhysicalObject {
                 }
             }
         }
+
+        //to get the position of the resource every 5 timesteps
+        //add the position of the resource to the collection
+        // if( (simState.schedule.getSteps() % 5 == 0) && (!isConstructed) ) {
+        //     Vec2 currentPosition = this.getBody().getPosition();
+        //     resourceTrajectory.add(currentPosition);
+        // }
+
+        if( simState.schedule.getSteps() % 5 == 0 ) {
+            Vec2 currentPosition = this.getBody().getPosition();
+            Vec2 resultantPosition = currentPosition.sub(new Vec2(initialX, initialY));
+            resourceTrajectory.add(resultantPosition);
+        }
+    }
+
+    public LinkedList<Vec2> getTrajectory() {
+        return this.resourceTrajectory;
     }
 
 
@@ -925,17 +786,9 @@ public class ResourceObject extends PhysicalObject {
 
         // Mark the anchor as taken and the robot as bound to a resource.
         closestAnchor.markTaken();
-        robot.setBoundToResource(true);  
+        robot.setBoundToResource(true);
 
-        /**
-        DECISION: increment robot's pickup count or increment only when resource is pushed by maxRobots?
-        **/
-        if (pushedByMaxRobots()) {
-            robot.incrementPickupCount();
-            incrementPickupCount();
-        }
-        //robot.incrementPickupCount()
-        // incrementPickupCount();      
+        robot.incPickups();
 
         return true;
     }
@@ -969,20 +822,7 @@ public class ResourceObject extends PhysicalObject {
      * @param anchorPoint The local point on the resource to create the weld
      */
     public WeldJointDef createResourceWeldJoint(ResourceObject resource){
-        Vec2 resPos = resource.getBody().getPosition();
-        if (this.getValue() < resource.getValue()) {
-            resource.getBody().setTransform(resPos, 0);
-            Vec2 newPos = new Vec2(resPos.x, resPos.y + (float)resource.getWidth());
-            getBody().setTransform(newPos, 0);
-
-        }
-        else {
-            resPos = this.getBody().getPosition();
-            this.getBody().setTransform(resPos, 0);
-            Vec2 newPos = new Vec2(resPos.x, resPos.y + (float)this.getWidth());
-            getBody().setTransform(newPos, 0);
-        }
-        // set angle of both resources
+        // Creates weld joint attached to the center of each resource
         getBody().setTransform(getBody().getPosition(), 0);
         resource.getBody().setTransform(resource.getBody().getPosition(), 0);
         int n = 0;
@@ -1154,36 +994,6 @@ public class ResourceObject extends PhysicalObject {
         return normal;
     }
 
-    /** Mark this object as collected. i.e. mark it as being in a/the construction zone. */
-    public void setCollected(boolean isConstructed) {
-        if (isConstructed == this.isConstructed) {
-            return;
-        }
-
-        // Sticky side could be unset if resource "bumped" into target area without robots
-        // creating joints with it
-        if (isConstructed && stickySide != null) {
-            // Break all the joints
-            for (Map.Entry<RobotObject, Joint> entry : joints.entrySet()) {
-                RobotObject robot = entry.getKey();
-                robot.setBoundToResource(false);
-                getBody().getWorld().destroyJoint(entry.getValue());
-            }
-            joints.clear();
-
-            // Reset the anchor points
-            AnchorPoint[] anchorPoints = getAnchorPointsForSide(stickySide);
-            for (AnchorPoint anchorPoint : anchorPoints) {
-                anchorPoint.taken = false;
-            }
-
-            // Reset the sticky side
-            stickySide = null;
-        }
-
-        this.isConstructed = isConstructed;
-    }
-
     /**
      * detach the robot from the resource regardless of whether or not the resource
      * in the target area
@@ -1205,18 +1015,53 @@ public class ResourceObject extends PhysicalObject {
         }
     }
 
+    /**
+    Used to group rotation angles of the resource into 4 main blocks for calculating the correct adjacent sides
+    **/
+    public double roundAngle (double a) {
+
+        double divBy2Pi = a/(Math.PI*2);
+        double fractionalPart = divBy2Pi % 1;
+        // double integralPart = divBy2Pi - fractionalPart;
+        double refAngle;
+        if (fractionalPart < 0) {
+            refAngle = Math.PI*2 + fractionalPart*Math.PI*2;
+        }
+        else {
+            refAngle = fractionalPart*(Math.PI*2);
+        }
+
+        double d45 = Math.PI/4;
+        double d135 = 3*Math.PI/4;
+        double d225 = 5*Math.PI/4;
+        double d315 = 7*Math.PI/4;
+
+        double returnQuad;
+
+        if ((refAngle < d45)||(refAngle > d315)) {
+            returnQuad = 0D;
+        }
+        else if ((refAngle >= d45)&&(refAngle < d135)) {
+            returnQuad = 1D;
+        }
+        else if ((refAngle >= d135)&&(refAngle < d225)) {
+            returnQuad = 2D;
+        }
+        else {
+            returnQuad = 3D;
+        }
+
+        return returnQuad;
+    }
+
+    public double getBodyAngle () {
+        // System.out.println(rotXAxis + " " + rotXAxis.length());
+        return roundAngle((double)this.getBody().getAngle());
+    }
+
     /** Check whether this resource already has the max number of robots attached to it. */
     public boolean pushedByMaxRobots() {
         return getNumberPushingRobots() >= pushingRobots;
-    }
-
-    /**
-    Increments the pickup count for each robot pushing this resource if the max # robots are pushing it
-    **/
-    public void incrementPickupCount() {
-        for (RobotObject r : joints.keySet()) {
-            r.incrementPickupCount();
-        }
     }
 
     /** Get the number of robots currently pushing/attached to this resource. */
@@ -1240,27 +1085,10 @@ public class ResourceObject extends PhysicalObject {
         return value;
     }
 
-    public LinkedList<Vec2> getPushSampling () {
-        return pushedSampling;
-    }
-
     /** Fitness value adjusted (decreased) for the amount of time the simulation has been running */
     public double getAdjustedValue() {
         return adjustedValue;
     }
-
-    public boolean isFullyWelded(){
-        return fullyWelded;
-    }
-
-    public boolean hasMoved(){
-        return this.hasMoved;
-    }
-
-    // @Override
-    // public String toString () {
-    //     return 
-    // }
 
     /**
      * Container class for points along the sticky edge of the resource where robots can attach to
@@ -1307,104 +1135,59 @@ public class ResourceObject extends PhysicalObject {
         public boolean isTaken() {
             return taken;
         }
-
     }
 
-    // public class DetectionPoint{
-    //     private final Vec2 [] positions;
-    //     private boolean collided;
-    //     private Vec2 worldPosition = null;
+    public class DetectionPoint{
+        private final Vec2 position;
+        private boolean collided;
+        private Vec2 worldPosition = null;
+        private Body body;
 
-    //     private DetectionPoint(Vec2 [] positions){
-    //         this.positions = positions;
-    //         createPortrayal(0.1, 0.1);
-    //     }
+        private DetectionPoint(Vec2 position, Body body){
+            this.position = position;
+            this.body = body;
+        }
 
-    //     private void markColliding() {
-    //         collided = true;
-    //     }
+        private void markColliding() {
+            collided = true;
+        }
 
-    //     public Vec2[] getPositions() {
-    //         return positions;
-    //     }
+        public Vec2 getPosition() {
+            return position;
+        }
 
-    //     public Vec2 [] getRelativePositions(Vec2 resourcePos){
-    //         Vec2 [] relativePositions = new Vec2 [3];
-    //         for (int i = 0; i < positions.length; i++) {
-    //             relativePositions[i] = positions[i].add(resourcePos);
-    //         }
-    //         return relativePositions;
-    //     }
+        public Vec2 getRelativePosition(Body thisResource){
 
-    //     public Vec2 [] getWorldPositions() {
-    //         Vec2 [] worldPositions = new Vec2 [3];
-    //         if (worldPosition == null) {
-    //             for (int i = 0; i < positions.length; i++) {
-    //                 worldPosition = getBody().getWorldPoint(positions[i]);
-    //             }
-                
-    //         }
-    //         return worldPositions;
-    //     }
+            Transform bodyXFos = thisResource.getTransform();
+            Vec2 relativePos = Transform.mul(bodyXFos, this.position);
 
-    //     public boolean isTaken() {
-    //         return collided;
-    //     }
+            return relativePos;
+        }
 
-    //     protected Portrayal createPortrayal(double width, double height) {
-    //         Paint color = new Color(0,0,0);
-    
-    //         return new DPPortrayal(width, height, color, true);
-    //     }
+        public Vec2 getWorldPosition() {
+            if (worldPosition == null) {
+                worldPosition = getBody().getWorldPoint(position);
+            }
+            return worldPosition;
+        }
 
-    //     // //ALIGNMENT
-    //     // public boolean isWithinResource (Vec2 r1Pos, Vec2 r2Pos, float r2Width) {
-    //     //     float r1DPToR2 = r2Pos.sub(this.getRelativePosition(r1Pos)).length();
-    //     //     if (r1DPToR2 < r2Width/2) {
-    //     //         return true;
-    //     //     }
-    //     //     else {
-    //     //         return false;
-    //     //     }
-    //     // }
-    // }
+        public boolean isNearCenter(Vec2 otherResPos) {
 
-    /**
-    Dan's DetectionPoint
-    **/
+            Vec2 relPos = getRelativePosition(this.body);
+            float distBetween = relPos.sub(otherResPos).length();
 
-    // public class DetectionPoint{
-    //     private final Vec2 position;
-    //     private boolean collided;
-    //     private Vec2 worldPosition = null;
+            if (distBetween < (0.1f + Simulation.DISCR_GAP)) {
+                return true;
+            }
+            else {
+                return false;
+            }
+        }
 
-    //     private DetectionPoint(Vec2 position){
-    //         this.position = position;
-    //     }
-
-    //     private void markColliding() {
-    //         collided = true;
-    //     }
-
-    //     public Vec2 getPosition() {
-    //         return position;
-    //     }
-
-    //     public Vec2 getRelativePosition(Vec2 resourcePos){
-    //         return position.add(resourcePos);
-    //     }
-
-    //     public Vec2 getWorldPosition() {
-    //         if (worldPosition == null) {
-    //             worldPosition = getBody().getWorldPoint(position);
-    //         }
-    //         return worldPosition;
-    //     }
-
-    //     public boolean isTaken() {
-    //         return collided;
-    //     }
-    // }
+        public boolean isTaken() {
+            return collided;
+        }
+    }
 
     public class WeldPoint {
         private final Vec2 position;
@@ -1412,8 +1195,7 @@ public class ResourceObject extends PhysicalObject {
         private ResourceObject alignedResource;
         private boolean taken;
 
-        /** @param position position local to the resource */
-        private WeldPoint(Vec2 position) {
+        public WeldPoint(Vec2 position) {
             this.position = position;
             this.taken = false;
         }
@@ -1455,23 +1237,14 @@ public class ResourceObject extends PhysicalObject {
             final float width = (float) getWidth();
             final float height = (float) getHeight();
 
-            // final float dy = (float) getHeight() * 0.3f;
-
-            // System.out.println(aabb);
-            // final float width = aabb.upperBound.x - aabb.lowerBound.x;
-            // final float height = aabb.upperBound.y - aabb.lowerBound.y;
+            //final float dy = (float) getHeight() * 0.3f;
 
             float halfWidth = width / 2;
             float halfHeight = height / 2;
-            // vertices[0].set(-halfWidth, -halfHeight - dy);
-            // vertices[1].set(halfWidth, -halfHeight - dy);
-            // vertices[2].set(halfWidth, halfHeight - dy);
-            // vertices[3].set(-halfWidth, halfHeight - dy);
             vertices[0].set(-halfWidth, -halfHeight);
             vertices[1].set(halfWidth, -halfHeight);
             vertices[2].set(halfWidth, halfHeight);
             vertices[3].set(-halfWidth, halfHeight);
-            // setChildDrawable(new DPPortrayal(width, height));
         }
     }
 

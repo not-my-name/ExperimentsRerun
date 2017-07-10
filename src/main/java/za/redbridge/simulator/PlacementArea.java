@@ -13,7 +13,6 @@ import java.util.Set;
 
 import ec.util.MersenneTwisterFast;
 import za.redbridge.simulator.object.PhysicalObject;
-import za.redbridge.simulator.object.TargetAreaObject;
 
 
 import static za.redbridge.simulator.Utils.randomAngle;
@@ -74,10 +73,7 @@ public class PlacementArea {
             float sin = MathUtils.abs(MathUtils.sin(angle));
             float cos = MathUtils.abs(MathUtils.cos(angle));
             float width = objectHeight * sin + objectWidth * cos + PADDING;
-            // float width = objectWidth + 1f;
-            // float height = objectHeight + 1f;
             float height = objectWidth * sin + objectHeight * cos + PADDING;
-            // System.out.println(width + " " + height);
             resizeAABB(aabb, width, height);
 
             float x = randomRange(random, width, this.width - width);
@@ -196,27 +192,11 @@ public class PlacementArea {
         return newPoint;
     }
 
-    Space getRectangularSpaceForTA(float objectWidth, float objectHeight, Vec2 position, float angle) {
-        float sin = MathUtils.abs(MathUtils.sin(angle));
-        float cos = MathUtils.abs(MathUtils.cos(angle));
-        float width = objectHeight * sin + objectWidth * cos + PADDING;
-        float height = objectWidth * sin + objectHeight * cos + PADDING;
-
-        AABB aabb = createAABB(position.x, position.y, width, height);
-        // if (overlappingWithOtherObject(aabb)) {
-        //     return null;
-        // }
-
-        return new Space(aabb, angle);
-    }
-
     Space getRectangularSpace(float objectWidth, float objectHeight, Vec2 position, float angle) {
         float sin = MathUtils.abs(MathUtils.sin(angle));
         float cos = MathUtils.abs(MathUtils.cos(angle));
         float width = objectHeight * sin + objectWidth * cos + PADDING;
         float height = objectWidth * sin + objectHeight * cos + PADDING;
-        // float width = objectWidth + 1f;
-        // float height = objectHeight + 1f;
 
         AABB aabb = createAABB(position.x, position.y, width, height);
         if (overlappingWithOtherObject(aabb)) {
@@ -242,8 +222,6 @@ public class PlacementArea {
         float cos = MathUtils.abs(MathUtils.cos(angle));
         float width = objectHeight * sin + objectWidth * cos + PADDING;
         float height = objectWidth * sin + objectHeight * cos + PADDING;
-        // float width = objectWidth + 1f;
-        // float height = objectHeight + 1f;
         AABB aabb = createAABB(position.x, position.y, width, height);
         return overlappingWithOtherObject(aabb);
     }
@@ -255,10 +233,6 @@ public class PlacementArea {
             }
         }
         return false;
-    }
-
-    void placeTAObject(Space space, TargetAreaObject ta) {
-        placements.put(ta, space);
     }
 
     void placeObject(Space space, PhysicalObject object) {

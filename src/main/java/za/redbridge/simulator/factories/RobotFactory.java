@@ -12,7 +12,8 @@ import java.util.List;
 import java.util.Map;
 
 public interface RobotFactory {
-    void placeInstances(PlacementArea.ForType<RobotObject> placementArea, World world);
+    void placeInstances(PlacementArea.ForType<RobotObject> placementArea, World world,
+                        SimConfig.Direction targetAreaPlacement);
 
     int getNumRobots();
     void setNumRobots(int numRobots);

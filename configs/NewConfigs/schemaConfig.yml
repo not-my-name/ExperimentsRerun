@@ -1,0 +1,171 @@
+---
+config0:
+  resQuantity : 6 6 3
+  resource0:
+    left: A B C
+    right: A B C
+    up: A B C
+    down: A B C
+  resource1:
+    left: A B C
+    right: A B C
+    up: A B C
+    down: A B C
+  resource2:
+    left: A B C
+    right: A B C
+    up: A B C
+    down: A B C
+config1:
+  resQuantity : 8 7 0
+  resource0:
+    left: A B
+    right: A B
+    up: A B
+    down: A B
+  resource1:
+    left: A B
+    right: A B
+    up: A B
+    down: A B
+  resource2:
+    left: X
+    right: X
+    up: X
+    down: X
+config2:
+  resQuantity : 6 6 3
+  resource0:
+    left: A B
+    right: A B
+    up: A
+    down: A
+  resource1:
+    left: A B
+    right: A B
+    up: B
+    down: B
+  resource2:
+    left: X
+    right: X
+    up: X
+    down: X
+config3:
+  resQuantity : 6 6 3
+  resource0:
+    left: A C
+    right: A C
+    up: A B
+    down: A B
+  resource1:
+    left: B
+    right: B
+    up: A
+    down: A
+  resource2:
+    left: A C
+    right: A C
+    up: C
+    down: C
+config4:
+  resQuantity : 8 4 3
+  resource0:
+    left: A B C
+    right: A B C
+    up: A B C
+    down: A B C
+  resource1:
+    left: A
+    right: A
+    up: A
+    down: A
+  resource2:
+    left: A C
+    right: A C
+    up: A C
+    down: A C
+config5:
+  resQuantity : 5 5 5
+  resource0:
+    left: B
+    right: B
+    up: B
+    down: B
+  resource1:
+    left: A
+    right: A
+    up: A
+    down: A
+  resource2:
+    left: X
+    right: X
+    up: X
+    down: X
+config6:
+  resQuantity : 6 6 3
+  resource0:
+    left: A B
+    right: A B
+    up: A C
+    down: A C
+  resource1:
+    left: A
+    right: A
+    up: B
+    down: B
+  resource2:
+    left: A
+    right: A
+    up: X
+    down: X
+config7:
+  resQuantity : 5 5 5
+  resource0:
+    left: B C
+    right: B C
+    up: B C
+    down: B C
+  resource1:
+    left: A C
+    right: A C
+    up: A C
+    down: A C
+  resource2:
+    left: A B C
+    right: A B C
+    up: A B C
+    down: A B C
+config8:
+  resQuantity : 6 3 6
+  resource0:
+    left: A B C
+    right: A B C
+    up: A B C
+    down: A B C
+  resource1:
+    left: A
+    right: A
+    up: A
+    down: A
+  resource2:
+    left: A
+    right: A
+    up: A
+    down: A
+config9:
+  resQuantity : 3 4 8
+  resource0:
+    left: B C
+    right: B C
+    up: B C
+    down: B C
+  resource1:
+    left: A C
+    right: A C
+    up: A C
+    down: A C
+  resource2:
+    left: A B
+    right: A B
+    up: A B
+    down: A B

@@ -35,23 +35,17 @@ public class Morphology{
         totalReadingSize = readSize;
     }
 
-    public List<AgentSensor> getSensors() { return sensorList; }
-
-    public AgentSensor getSensor(int i) { return sensorList.get(i); }
+    public List<AgentSensor> getSensorList() { return sensorList; }
 
     public int getTotalReadingSize() { return totalReadingSize; }
 
     public int getNumSensors() { return numSensors; }
 
     public Morphology clone() {
-
         List<AgentSensor> newSensorList = new ArrayList<>();
-
         for (AgentSensor sensor: sensorList) {
-
             newSensorList.add(sensor.clone());
         }
-
         return new Morphology(newSensorList, numSensors);
     }
 

@@ -38,10 +38,6 @@ public abstract class PolygonPortrayal extends Portrayal {
         yPoints = new int[nVertices];
     }
 
-    public Vec2[] getVertices () {
-        return vertices;
-    }
-
     @Override
     protected void drawPrecise(Graphics2D graphics, STRTransform transform,
             boolean transformUpdated) {

@@ -35,7 +35,7 @@ public class SimulationFactory {
             p.printStackTrace();
         }
 
-        return morphologyConfig.getMorphology(i).getSensors();
+        return morphologyConfig.getMorphology(i).getSensorList();
     }
 
 

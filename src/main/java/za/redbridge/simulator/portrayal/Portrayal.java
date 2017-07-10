@@ -72,10 +72,6 @@ public abstract class Portrayal implements Drawable {
         transformUpdated = true;
     }
 
-    public STRTransform getTransform () {
-        return this.transform;
-    }
-
     @Override
     public void draw(Object object, Graphics2D graphics, DrawInfo2D info) {
         if (!enabled) {

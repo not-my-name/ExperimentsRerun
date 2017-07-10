@@ -390,12 +390,6 @@ public abstract class AgentSensor extends Sensor<List<Double>> {
         return new EdgeSensedObject(getFixtureObject(edgeFixture), distance, x1, y1, x2, y2);
     }
 
-    public String toString() {
-        String toPrint = name;
-        toPrint += "\t" +  bearing + "\n\t" + orientation + "\n\t" + range + "\n\t" + fieldOfView;
-        return toPrint;
-    }
-
     /**
      * Decide whether to filter out a given PhysicalObject instance due to some state changing in
      * the object being observed.

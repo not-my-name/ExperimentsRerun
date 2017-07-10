@@ -29,9 +29,11 @@ public class PickupHeuristic extends Heuristic {
     private final int MaxStepCounter = 350; // I think this is like 2 seconds
     private int CurrentNumPushingRobots = 0;
     private ResourceObject currentResource = null;
+
     private ResourceObject stuckResource = null;
 
     public PickupHeuristic(PickupSensor pickupSensor, RobotObject robot) {
+
         super(robot);
         this.pickupSensor = pickupSensor;
         setPriority(2);
@@ -39,14 +41,15 @@ public class PickupHeuristic extends Heuristic {
 
     @Override
     public Double2D step(List<List<Double>> list) {
+
         // Check for a resource in the sensor
         ResourceObject resource = pickupSensor.sense().map(o -> (ResourceObject) o.getObject()).orElse(null);
 
-        //If there is a resource and its the stuck one
-        if (resource != null && resource == stuckResource) {
+        if( (resource != null) && (resource == stuckResource) ) {
             return wheelDriveForTargetAngle(awayResourceTargetAngle());
         }
-        else if (resource == null && !robot.isBoundToResource()) {
+
+        if (resource == null && !robot.isBoundToResource()) {
             // no longer has resource, reset the counter
             resetCounter(currentResource);
             currentResource = null;
@@ -56,14 +59,11 @@ public class PickupHeuristic extends Heuristic {
             currentResource = resource;
             // Try pick it up
             if (resource.tryPickup(robot)) {
-                // Success!
-                // set the current number of robots pushing this resource
-            //    CurrentNumPushingRobots = currentResource.getNumberPushingRobots();
+
                 robot.setBoundToResource(true);
                 stuckResource = null;
+
                 resetCounter(currentResource);
-                // Head for the target zone
-                // return wheelDriveForTargetAngle(targetAreaAngle());
                 return null;
             }
         }
@@ -82,10 +82,13 @@ public class PickupHeuristic extends Heuristic {
                 }
             }else if(SimStepCount >= MaxStepCounter){
                 // been holding this resourse for too long, detach from it and drive away
+                //System.out.println("PickupHeuristic: the robot is about to detach");
                 currentResource.forceDetach();
                 resetCounter(currentResource);
+
                 stuckResource = currentResource;
                 robot.setBoundToResource(false);
+
                 return wheelDriveForTargetAngle(awayResourceTargetAngle());
             }
         }

@@ -18,8 +18,6 @@ import java.awt.*;
  */
 public class PhysicalObject implements Steppable {
 
-    private static final long serialVersionUID = 1L;
-
     private final Portrayal portrayal;
     private final Body body;
 
@@ -41,9 +39,9 @@ public class PhysicalObject implements Steppable {
     @Override
     public void step(SimState simState) {
         // Nothing to update if we're static or sleeping
-        // if (body.getType() == BodyType.STATIC || !body.isAwake()) {
-        //     return;
-        // }
+        if (body.getType() == BodyType.STATIC || !body.isAwake()) {
+            return;
+        }
 
         Simulation s = (Simulation) simState;
         portrayal.setTransform(body.getTransform());

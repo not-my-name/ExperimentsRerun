@@ -89,8 +89,6 @@ public abstract class Heuristic implements Comparable<Heuristic> {
             }
         }
 
-        // System.out.println(new Double2D(left, right));
-
         return new Double2D(left, right);
     }
 

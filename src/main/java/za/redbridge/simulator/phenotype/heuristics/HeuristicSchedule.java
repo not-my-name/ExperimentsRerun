@@ -30,6 +30,7 @@ public class HeuristicSchedule {
         String activeHeuristic = "none";
         // for each heuristic in schedule check if readings are returned
         for (Heuristic heuristic : schedule) {
+            //System.out.println("HeuristicSchedule: printig the heuristic -> " + heuristic);
             wheelDrive = heuristic.step(readings);
             if (wheelDrive != null) {
                 // Update the robot's paint
