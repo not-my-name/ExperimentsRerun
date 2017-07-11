@@ -101,7 +101,7 @@ public class Main {
 
 			//String networkSourceDirectory = "/THIS NEEDS TO BE CHANGED/ConferenceResults/First/" + dLevel + "/network.ser";
 
-			String networkSourceDirectory = "/home/ruben/Masters_2017/Experiments/ConferenceEvalRuns/First_Fixed/ExperimentsRerun/ConferenceResults/First/" + dLevel + "/network.ser";
+			String networkSourceDirectory = "/home/p/pttand010/Desktop/ConferenceEvalRuns/First_Fixed/ExperimentsRerun/ConferenceResults/First/" + dLevel + "/network.ser";
 
 			//final StatsRecorder statsRecorder = new StatsRecorder(trainer, scoreCalculator); //this is basically where the simulation runs
 
