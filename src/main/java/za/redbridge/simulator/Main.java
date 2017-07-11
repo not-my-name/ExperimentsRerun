@@ -99,7 +99,7 @@ public class Main {
 		    }
 
 			//String networkSourceDirectory = "/home/ruben/Masters_2017/Experiments/EvaluationRuns/ExperimentsRerun/ResultNetworks/network.ser";
-			String networkSourceDirectory = "/home/ruben/Masters_2017/Experiments/ConferenceEvalRuns/Third_Random/ExperimentsRerun/ConferenceResults/Third/" + dLevel + "/network.ser";
+			String networkSourceDirectory = "/home/p/pttand010/Desktop/ConferenceEvalRuns/Third_Random/ExperimentsRerun/ConferenceResults/Third/" + dLevel + "/network.ser";
 
 			//final StatsRecorder statsRecorder = new StatsRecorder(trainer, scoreCalculator); //this is basically where the simulation runs
 
