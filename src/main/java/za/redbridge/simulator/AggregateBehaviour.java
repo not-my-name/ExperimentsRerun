@@ -87,6 +87,8 @@ public class AggregateBehaviour{
 
         avgFitness = totalFitnessScore / numSimulationRuns;
 
+        System.out.println("AggregateBehaviour: the total fitness score = " + totalFitnessScore);
+
         normalisedNumConnected = normalisedNumConnected / numSimulationRuns; //gives avg ration of connected to unconnected blocks per simulation
     }
 

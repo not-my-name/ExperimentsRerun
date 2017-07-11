@@ -25,6 +25,8 @@ import za.redbridge.simulator.Morphology;
 import za.redbridge.simulator.factories.ConfigurableResourceFactory;
 import za.redbridge.simulator.factories.ResourceFactory;
 
+import za.redbridge.simulator.SensorCollection;
+
 import java.util.*;
 
 import za.redbridge.simulator.StatsRecorder;
@@ -43,6 +45,29 @@ public class ScoreCalculator implements CalculateScore {
     private final DescriptiveStatistics performanceStats = new SynchronizedDescriptiveStatistics(); //record the time duration
     private final DescriptiveStatistics fitnessStats = new SynchronizedDescriptiveStatistics(); //record the fitness scores
 
+///////////////////////////////////////////////////////
+    private final DescriptiveStatistics avgFitnessStats = new SynchronizedDescriptiveStatistics();
+    private final DescriptiveStatistics avgAConnected_Stats = new SynchronizedDescriptiveStatistics();
+    private final DescriptiveStatistics avgBConnected_Stats = new SynchronizedDescriptiveStatistics();
+    private final DescriptiveStatistics avgCConnected_Stats = new SynchronizedDescriptiveStatistics();
+
+    private final DescriptiveStatistics normalisedAConnected_Stats = new SynchronizedDescriptiveStatistics();
+    private final DescriptiveStatistics normalisedBConnected_Stats = new SynchronizedDescriptiveStatistics();
+    private final DescriptiveStatistics normalisedCConnected_Stats = new SynchronizedDescriptiveStatistics();
+
+    private final DescriptiveStatistics avgNormTotalConnected_Stats = new DescriptiveStatistics();
+
+    private final DescriptiveStatistics avgNormAConnected_Stats = new SynchronizedDescriptiveStatistics();
+    private final DescriptiveStatistics avgNormBConnected_Stats = new SynchronizedDescriptiveStatistics();
+    private final DescriptiveStatistics avgNormCConnected_Stats = new SynchronizedDescriptiveStatistics();
+
+    private final DescriptiveStatistics totalBlocksConnected_Stats = new SynchronizedDescriptiveStatistics();
+
+
+////////////////////////////////////////////////////////////////////////
+
+
+
     //files to store the statistics regarding the number of different types of blocks that get connected
     private final DescriptiveStatistics numAConnected_Stats = new SynchronizedDescriptiveStatistics(); //avg number of blocks connected per simulation
     private final DescriptiveStatistics numBConnected_Stats = new SynchronizedDescriptiveStatistics();
@@ -60,26 +85,23 @@ public class ScoreCalculator implements CalculateScore {
     private NoveltyBehaviour[] currentPopulation;
     private int currentBehaviour; //keep track of how many of the individuals in the generation have been processed
 
-    //variable to store the dimensions of the environment
-    private double envWidth;
-    private double envHeight;
-
     /**
     need to set this from the main method in order to run the experiments
     */
-    private boolean PerformingNoveltyCalcs = true;
+    private boolean PerformingNoveltyCalcs = false;
+
+    private SensorCollection sensorCollection;
 
     public ScoreCalculator(SimConfig simConfig, int simulationRuns,
-            Morphology sensorMorphology, int populationSize, int schemaConfigNum, double envHeight, double envWidth) {
+            Morphology sensorMorphology, int populationSize, SensorCollection sensorCollection) {
 
         this.simConfig = simConfig;
         this.simulationRuns = simulationRuns;
         this.sensorMorphology = sensorMorphology;
         this.populationSize = populationSize;
+        this.schemaConfigNum = this.simConfig.getConfigNumber();
 
-        this.envHeight = envHeight;
-        this.envWidth = envWidth;
-        this.schemaConfigNum = schemaConfigNum;
+        this.sensorCollection = sensorCollection;
 
         //there is only one ScoreCalculator that gets used
         //dont have to worry about different threads having different instances of the object
@@ -143,8 +165,8 @@ public class ScoreCalculator implements CalculateScore {
         return numCConnected_Stats;
     }
 
-    public DescriptiveStatistics getAvgBlocksConnectedFile() {
-        return avgBlocksConnected_Stats;
+    public DescriptiveStatistics getTotalBlocksConnectedFile() {
+        return totalBlocksConnected_Stats;
     }
 
     public DescriptiveStatistics getNumConstructionZonesFile() {
@@ -155,6 +177,55 @@ public class ScoreCalculator implements CalculateScore {
         return normNumBlocksConnected_Stats;
     }
 
+    public DescriptiveStatistics getAvgFitnessFile() {
+        return avgFitnessStats;
+    }
+
+    public DescriptiveStatistics getAvgAConFile() {
+        return avgAConnected_Stats;
+    }
+
+    public DescriptiveStatistics getAvgBConFile() {
+        return avgBConnected_Stats;
+    }
+
+    public DescriptiveStatistics getAvgCConFile() {
+        return avgCConnected_Stats;
+    }
+
+    public DescriptiveStatistics getTotalAvgCon() {
+        return avgBlocksConnected_Stats;
+    }
+
+    public DescriptiveStatistics getAvgNormA() {
+        return avgNormAConnected_Stats;
+    }
+
+    public DescriptiveStatistics getAvgNormB() {
+        return avgNormBConnected_Stats;
+    }
+
+    public DescriptiveStatistics getAvgNormC() {
+        return avgNormCConnected_Stats;
+    }
+
+    public DescriptiveStatistics getNormAConnectedFile() {
+        return normalisedAConnected_Stats;
+    }
+
+    public DescriptiveStatistics getNormBConnectedFile() {
+        return normalisedBConnected_Stats;
+    }
+
+    public DescriptiveStatistics getNormCConnectedFile() {
+        return normalisedCConnected_Stats;
+    }
+
+    public DescriptiveStatistics getAvgNormTotalConnected() {
+        return avgNormTotalConnected_Stats;
+    }
+
+
     /*
     method to run the given network a certain number of times
     in the simulator in order to evaluate its average performance*/
@@ -163,7 +234,7 @@ public class ScoreCalculator implements CalculateScore {
         NEATNetwork neat_network = null;
         RobotFactory robotFactory;
 
-	final StatsRecorder statsRecorder = new StatsRecorder(this); //this is basically where the simulation runs
+	    final StatsRecorder statsRecorder = new StatsRecorder(this); //this is basically where the simulation runs
 
         //System.out.println("ScoreCalculator: PHENOTYPE for NEATNetwork: " + getPhenotypeForNetwork(neat_network));
         neat_network = (NEATNetwork) method;
@@ -181,26 +252,78 @@ public class ScoreCalculator implements CalculateScore {
         Simulation simulation = new Simulation(simConfig, robotFactory, resourceFactory, false);
         simulation.setSchemaConfigNumber(schemaConfigNum);
 
-	for(int k = 0; k < 20; k++) {
+        AggregateBehaviour aggregateBehaviour = new AggregateBehaviour(20);
+        double avgFitness = 0;
 
-		Behaviour resultantBehaviour = simulation.runObjective();
+        double avgNormA = 0;
+        double avgNormB = 0;
+        double avgNormC = 0;
+
+
+	    for(int k = 0; k < 20; k++) {
+
+		    Behaviour resultantBehaviour = simulation.runObjective();
         	int [] resTypeCount = simulation.getResTypeCount();
         	int totalResCount = resTypeCount[0] + resTypeCount[1] + resTypeCount[2];
-		
-		//System.out.println("ScoreCalculator: total connected A = " + resultantBehaviour.getConnectedA());
-		//System.out.println("ScoreCalculator: total connected B = " + resultantBehaviour.getConnectedB());
-		//System.out.println("ScoreCalculator: total connected C = " + resultantBehaviour.getConnectedC());
-		//System.out.println("ScoreCalculator: total connected = " + totalResCount);
-	
-		numAConnected_Stats.addValue(resultantBehaviour.getConnectedA());
-		numBConnected_Stats.addValue(resultantBehaviour.getConnectedB());
-		numCConnected_Stats.addValue(resultantBehaviour.getConnectedC());
-		avgBlocksConnected_Stats.addValue(resultantBehaviour.getTotalConnected());
-		double resConnectedRatio = resultantBehaviour.getTotalConnected() / totalResCount;
-		normNumBlocksConnected_Stats.addValue(resConnectedRatio);
-		
-		statsRecorder.recordIterationStats(k);
-	}
+
+            aggregateBehaviour.setTotalNumRes(totalResCount);
+            aggregateBehaviour.addBehaviour(resultantBehaviour);
+
+            ObjectiveFitness objectiveFitness = new ObjectiveFitness(schemaConfigNum, resTypeCount);
+            double runFitness = objectiveFitness.calculate(resultantBehaviour);
+            avgFitness += runFitness;
+
+            fitnessStats.addValue(runFitness);
+
+    		numAConnected_Stats.addValue(resultantBehaviour.getConnectedA());
+    		numBConnected_Stats.addValue(resultantBehaviour.getConnectedB());
+    		numCConnected_Stats.addValue(resultantBehaviour.getConnectedC());
+
+            double normalisedA = resultantBehaviour.getConnectedA() / resTypeCount[0];
+
+            double normalisedB = 0;
+            if(resTypeCount[1] != 0) {
+                normalisedB = resultantBehaviour.getConnectedB() / resTypeCount[1];
+            }
+
+            double normalisedC = 0;
+            if(resTypeCount[2] != 0) {
+                normalisedC = resultantBehaviour.getConnectedC() / resTypeCount[2];
+            }
+
+            avgNormA += normalisedA;
+            avgNormB += normalisedB;
+            avgNormC += normalisedC;
+
+            normalisedAConnected_Stats.addValue(normalisedA);
+            normalisedBConnected_Stats.addValue(normalisedB);
+            normalisedCConnected_Stats.addValue(normalisedC);
+
+            totalBlocksConnected_Stats.addValue(resultantBehaviour.getTotalConnected());
+    		double resConnectedRatio = resultantBehaviour.getTotalConnected() / totalResCount;
+    		normNumBlocksConnected_Stats.addValue(resConnectedRatio);
+
+    		statsRecorder.recordIterationStats(k);
+	    }
+
+        aggregateBehaviour.finishRecording();
+
+        avgNormA /= 20;
+        avgNormB /= 20;
+        avgNormC /= 20;
+        avgFitness /= 20;
+
+        avgFitnessStats.addValue(avgFitness);
+        avgAConnected_Stats.addValue(aggregateBehaviour.getAvgABlocksConnected());
+        avgBConnected_Stats.addValue(aggregateBehaviour.getAvgBBlocksConnected());
+        avgCConnected_Stats.addValue(aggregateBehaviour.getAvgCBlocksConnected());
+        avgBlocksConnected_Stats.addValue(aggregateBehaviour.getAvgNumBlocksConnected());
+        avgNormAConnected_Stats.addValue(avgNormA);
+        avgNormBConnected_Stats.addValue(avgNormB);
+        avgNormCConnected_Stats.addValue(avgNormC);
+        avgNormTotalConnected_Stats.addValue(aggregateBehaviour.getNormalisedNumConnected());
+
+        statsRecorder.recordEvaluationStats();
     }
 
     public void demo(MLMethod method) {

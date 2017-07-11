@@ -39,10 +39,6 @@ public class Main {
 	private final static Logger log = LoggerFactory.getLogger(Main.class);
 	private final static double convergenceScore = 1000;
 
-	private final static boolean PerformingObjectiveSearch = false;
-	private final static boolean PerformingNoveltySearch = true;
-	private final static boolean PerformingHybridSearch = false;
-
 	private static int numInputs;
 	private int numOutputs = 2;
 	private int populationSize;
@@ -52,57 +48,63 @@ public class Main {
 
 	private static Archive archive;
 
-	private static int schemaConfigIndex; //the schema against which the construction zone should be checked
-
-	private static String resConfig;
-
-	private static double envHeight;
-	private static double envWidth;
-
 	public static void main(String args[]) throws IOException, ParseException{
 
-		Args options = new Args();
-		new JCommander(options, args);
+		for(int k = 0; k < 3; k++) { //iterating over the different complexity levels
 
-		log.info(options.toString());
-		int ind = 1;
+			Args options = new Args();
+			new JCommander(options, args);
+			log.info(options.toString());
 
-		double connectionDensity = 0.5;
-		//fetching the correct simConfig for each experiment
-		String simConfigFP = "configs/simConfig" + Integer.toString(ind) + ".yml";
-		//String experimentConfigFP = "configs/experimentConfig.yml";
-		String morphologyConfigFP = "configs/morphologyConfig.yml";
-		String folderDir = "/Results";
-		Utils.setDirectoryName(folderDir);
+			int difficulty = k+1;
 
-		MorphologyConfig morphologyConfig = new MorphologyConfig(morphologyConfigFP);
-		Morphology morphology = morphologyConfig.getMorphology(1);
-		numInputs = morphology.getNumSensors();
+			//getting the correct simulation configuration for this experiment case
+			//simconfig shows the types of blocks present, as well as their properties and the connection schema that is to be used
+			String simConfigFP = "configs/simConfig" + Integer.toString(difficulty) + ".yml";
+			SimConfig simConfig = new SimConfig(simConfigFP);
 
-		SimConfig simConfig = new SimConfig(simConfigFP);
+			SensorCollection sensorCollection = new SensorCollection("configs/morphologyConfig.yml");
+			Morphology morphology = sensorCollection.getMorph(2);
+			numInputs = morphology.getNumSensors();
 
-		resConfig = options.environment;
+			//creating the folder directory for the results
+			String difficultyLevel = "";
+			if (difficulty == 1) {
+                difficultyLevel = "Level_1_nocoop_simple";
+            }
+            else if (difficulty == 2) {
+                difficultyLevel = "Level_2_coop_simple";
+            }
+            else if (difficulty == 3) {
+                difficultyLevel = "Level_3_nocoop_complex";
+            }
+            else if(difficulty == 4) {
+                difficultyLevel = "Level_4_coop_complex";
+            }
+			String folderDir = "/EvaluationRuns/GitBranch/" + difficultyLevel;
+			Utils.setDirectoryName(folderDir);
 
-		envWidth = simConfig.getEnvironmentWidth();
-		envHeight = simConfig.getEnvironmentHeight();
+			ScoreCalculator scoreCalculator = new ScoreCalculator(simConfig, options.simulationRuns,
+								morphology, options.populationSize, sensorCollection);
 
-		schemaConfigIndex = simConfig.getConfigNumber();
-		ScoreCalculator scoreCalculator = new ScoreCalculator(simConfig, options.simulationRuns,
-						morphology, options.populationSize, schemaConfigIndex, envHeight, envWidth); //got this from the Main class in last years Controller Master folder
+			if (!isBlank(options.genomePath)) {
+				   NEATNetwork network = (NEATNetwork) readObjectFromFile(options.genomePath);
+				   scoreCalculator.demo(network);
+				   return;
+		    }
 
-		NEATNetwork network = (NEATNetwork) readObjectFromFile("/home/p/pttand010/Desktop/HonoursExperimentResults/EvaluationResults/FinalEvalResults/Schema_1/BestNoveltyNetwork/Run_2/epoch-87/network.ser");
+			String networkSourceDirectory = "/home/ruben/Masters_2017/Experiments/EvaluationRuns/ExperimentsRerun/ResultNetworks/network.ser";
 
-		final StatsRecorder statsRecorder = new StatsRecorder(scoreCalculator); //this is basically where the simulation runs
+			//final StatsRecorder statsRecorder = new StatsRecorder(trainer, scoreCalculator); //this is basically where the simulation runs
 
-		//scoreCalculator.demo(network);
+			NEATNetwork network = (NEATNetwork) readObjectFromFile(networkSourceDirectory);
 
-		scoreCalculator.runEvaluation(network);
+			//final StatsRecorder statsRecorder = new StatsRecorder(scoreCalculator); //this is basically where the simulation runs
 
-		//for(int i = 0; i < 20; i++) {
-			//scoreCalculator.runEvaluation(network);
-			//statsRecorder.recordIterationStats(i);
-		//}
-		Encog.getInstance().shutdown();
+			scoreCalculator.runEvaluation(network);
+			log.debug("Evaluation Complete");
+			Encog.getInstance().shutdown();
+		}
 	}
 
 	private static class Args {

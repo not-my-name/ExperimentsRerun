@@ -40,6 +40,26 @@ public class StatsRecorder {
 	private Path numConstructionZones_StatsFile;
 	private Path normNumBlocksConnected_StatsFile;
 
+///////////////////////////////////////////////////////
+	private Path avgFitnessStats_File;
+
+	private Path avgAConnectedStats_File;
+	private Path avgBConnectedStats_File;
+	private Path avgCConnectedStats_File;
+
+	private Path normalisedAConnectedStats_File;
+	private Path normalisedBConnectedStats_File;
+	private Path normalisedCConnectedStats_File;
+
+	private Path avgNormAConnectedStats_File;
+	private Path avgNormBConnectedStats_File;
+	private Path avgNormCConnectedStats_File;
+
+	private Path avgBlocksConnectedStats_File;
+
+	private Path avgNormTotalConnectedStats_File;
+	//////////////////////////////////////////////////////
+
 	private Path evaluationDirectory; //directory in which to store the stats for the above files
 
 	//private Genome currentBestGenome;
@@ -113,6 +133,43 @@ public class StatsRecorder {
 
 		normNumBlocksConnected_StatsFile = evaluationDirectory.resolve("normalisedTotalNumBlocksConnected.csv");
 		initStatsFile(normNumBlocksConnected_StatsFile);
+
+		avgFitnessStats_File = evaluationDirectory.resolve("avgFitness.csv");
+		initStatsFile(avgFitnessStats_File);
+
+		avgAConnectedStats_File = evaluationDirectory.resolve("avgAConnected.csv");
+		initStatsFile(avgAConnectedStats_File);
+
+		avgBConnectedStats_File = evaluationDirectory.resolve("avgBConnected.csv");
+		initStatsFile(avgBConnectedStats_File);
+
+		avgCConnectedStats_File = evaluationDirectory.resolve("avgCConnected.csv");
+		initStatsFile(avgCConnectedStats_File);
+
+	 	normalisedAConnectedStats_File = evaluationDirectory.resolve("normAConnectedPerRun.csv");
+		initStatsFile(normalisedAConnectedStats_File);
+
+		normalisedBConnectedStats_File = evaluationDirectory.resolve("normBConnectedPerRun.csv");
+		initStatsFile(normalisedBConnectedStats_File);
+
+		normalisedCConnectedStats_File = evaluationDirectory.resolve("normCConnectedPerRun.csv");
+		initStatsFile(normalisedCConnectedStats_File);
+
+		avgNormAConnectedStats_File = evaluationDirectory.resolve("avgNormA.csv");
+		initStatsFile(avgNormAConnectedStats_File);
+
+		avgNormBConnectedStats_File = evaluationDirectory.resolve("avgNormB.csv");
+		initStatsFile(avgNormBConnectedStats_File);
+
+		avgNormCConnectedStats_File = evaluationDirectory.resolve("avgNormC.csv");
+		initStatsFile(avgNormCConnectedStats_File);
+
+		avgBlocksConnectedStats_File = evaluationDirectory.resolve("avgNumBlocks.csv");
+		initStatsFile(avgBlocksConnectedStats_File);
+
+		avgNormTotalConnectedStats_File = evaluationDirectory.resolve("avgTotalNormConnected.csv");
+		initStatsFile(avgNormTotalConnectedStats_File);
+
 	}
 
 	private static void initParamFile(Path path, String params) {
@@ -138,8 +195,28 @@ public class StatsRecorder {
 	    recordStats(calculator.getConnectedAFile(), generation, numAConnected_StatsFile);
 	    recordStats(calculator.getConnectedBFile(), generation, numBConnected_StatsFile);
 	    recordStats(calculator.getConnectedCFile(), generation, numCConnected_StatsFile);
-	    recordStats(calculator.getAvgBlocksConnectedFile(), generation, totalBlocksConnected_StatsFile);
+	    recordStats(calculator.getTotalBlocksConnectedFile(), generation, totalBlocksConnected_StatsFile);
 	    recordStats(calculator.getNormNumConnectedFile(), generation, normNumBlocksConnected_StatsFile);
+
+		recordStats(calculator.getNormAConnectedFile(), generation, normalisedAConnectedStats_File);
+		recordStats(calculator.getNormBConnectedFile(), generation, normalisedBConnectedStats_File);
+		recordStats(calculator.getNormCConnectedFile(), generation, normalisedCConnectedStats_File);
+
+	}
+
+	public void recordEvaluationStats() {
+
+		log.info("evaluation complete");
+
+		recordStats(calculator.getAvgFitnessFile(), 0, avgFitnessStats_File);
+		recordStats(calculator.getAvgAConFile(), 0, avgAConnectedStats_File);
+		recordStats(calculator.getAvgBConFile(), 0, avgBConnectedStats_File);
+		recordStats(calculator.getAvgCConFile(), 0, avgCConnectedStats_File);
+		recordStats(calculator.getTotalAvgCon(), 0, avgBlocksConnectedStats_File);
+		recordStats(calculator.getAvgNormA(), 0, avgNormAConnectedStats_File);
+		recordStats(calculator.getAvgNormB(), 0, avgNormBConnectedStats_File);
+		recordStats(calculator.getAvgNormC(), 0, avgNormCConnectedStats_File);
+		recordStats(calculator.getAvgNormTotalConnected(), 0, avgNormTotalConnectedStats_File);
 
 	}
 
