@@ -64,24 +64,30 @@ public class Main {
 			SimConfig simConfig = new SimConfig(simConfigFP);
 
 			SensorCollection sensorCollection = new SensorCollection("configs/morphologyConfig.yml");
-			Morphology morphology = sensorCollection.getMorph(2);
+			Morphology morphology = sensorCollection.getMorph(1);
 			numInputs = morphology.getNumSensors();
 
 			//creating the folder directory for the results
 			String difficultyLevel = "";
+			String dLevel = "";
 			if (difficulty == 1) {
                 difficultyLevel = "Level_1_nocoop_simple";
+				dLevel = "Level_1";
             }
             else if (difficulty == 2) {
                 difficultyLevel = "Level_2_coop_simple";
+				dLevel = "Level_2";
             }
             else if (difficulty == 3) {
                 difficultyLevel = "Level_3_nocoop_complex";
+				dLevel = "Level_3";
             }
             else if(difficulty == 4) {
                 difficultyLevel = "Level_4_coop_complex";
+				dLevel = "Level_4";
             }
-			String folderDir = "/EvaluationRuns/GitBranch/" + difficultyLevel;
+
+			String folderDir = "/EvaluationRuns/" + difficultyLevel;
 			Utils.setDirectoryName(folderDir);
 
 			ScoreCalculator scoreCalculator = new ScoreCalculator(simConfig, options.simulationRuns,
@@ -93,7 +99,9 @@ public class Main {
 				   return;
 		    }
 
-			String networkSourceDirectory = "/home/ruben/Masters_2017/Experiments/EvaluationRuns/ExperimentsRerun/ResultNetworks/network.ser";
+			//String networkSourceDirectory = "/THIS NEEDS TO BE CHANGED/ConferenceResults/First/" + dLevel + "/network.ser";
+
+			String networkSourceDirectory = "/home/ruben/Masters_2017/Experiments/ConferenceEvalRuns/First_Fixed/ExperimentsRerun/ConferenceResults/First/" + dLevel + "/network.ser";
 
 			//final StatsRecorder statsRecorder = new StatsRecorder(trainer, scoreCalculator); //this is basically where the simulation runs
 
