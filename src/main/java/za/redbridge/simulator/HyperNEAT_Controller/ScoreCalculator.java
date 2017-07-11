@@ -236,9 +236,11 @@ public class ScoreCalculator implements CalculateScore {
 
 	    final StatsRecorder statsRecorder = new StatsRecorder(this); //this is basically where the simulation runs
 
+        int[] bitMask = sensorCollection.generateRandomMask();
+
         //System.out.println("ScoreCalculator: PHENOTYPE for NEATNetwork: " + getPhenotypeForNetwork(neat_network));
         neat_network = (NEATNetwork) method;
-        robotFactory = new HomogeneousRobotFactory(getPhenotypeForNetwork(neat_network),
+        robotFactory = new HomogeneousRobotFactory(getPhenotypeForNetwork(neat_network, bitMask),
                     simConfig.getRobotMass(), simConfig.getRobotRadius(), simConfig.getRobotColour(),
                     simConfig.getObjectsRobots());
 
@@ -333,8 +335,10 @@ public class ScoreCalculator implements CalculateScore {
         BasicNetwork basic_network = null;
         RobotFactory robotFactory;
 
+        int[] bitMask = sensorCollection.getIdealBitMask();
+
         neat_network = (NEATNetwork) method;
-        robotFactory = new HomogeneousRobotFactory(getPhenotypeForNetwork(neat_network),
+        robotFactory = new HomogeneousRobotFactory(getPhenotypeForNetwork(neat_network, bitMask),
                 simConfig.getRobotMass(), simConfig.getRobotRadius(), simConfig.getRobotColour(),
                 simConfig.getObjectsRobots());
 
@@ -445,10 +449,10 @@ public class ScoreCalculator implements CalculateScore {
     }
 
     //HyperNEAT uses the NEATnetwork as well
-    private Phenotype getPhenotypeForNetwork(NEATNetwork network) {
+    private Phenotype getPhenotypeForNetwork(NEATNetwork network, int[] bitMask) {
         //System.out.println("ScoreCalculator: network input = " + network.getInputCount());
         //System.out.println("ScoreCalculator: network output = " + network.getOutputCount());
-        return new HyperNEATPhenotype(network, sensorMorphology);
+        return new HyperNEATPhenotype(network, sensorMorphology, bitMask);
     }
 
     public boolean isEvolvingMorphology() {
