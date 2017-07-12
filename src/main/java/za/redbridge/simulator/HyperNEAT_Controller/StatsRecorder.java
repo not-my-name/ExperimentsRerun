@@ -134,6 +134,9 @@ public class StatsRecorder {
 		normNumBlocksConnected_StatsFile = evaluationDirectory.resolve("normalisedTotalNumBlocksConnected.csv");
 		initStatsFile(normNumBlocksConnected_StatsFile);
 
+		fitness_StatsFile = evaluationDirectory.resolve("FitnessPerRun.csv");
+		initStatsFile(fitness_StatsFile);
+
 		avgFitnessStats_File = evaluationDirectory.resolve("avgFitness.csv");
 		initStatsFile(avgFitnessStats_File);
 
@@ -201,6 +204,8 @@ public class StatsRecorder {
 		recordStats(calculator.getNormAConnectedFile(), generation, normalisedAConnectedStats_File);
 		recordStats(calculator.getNormBConnectedFile(), generation, normalisedBConnectedStats_File);
 		recordStats(calculator.getNormCConnectedFile(), generation, normalisedCConnectedStats_File);
+
+		recordStats(calculator.getFitnessStatsFile(), generation, fitness_StatsFile);
 
 	}
 
