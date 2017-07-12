@@ -57,100 +57,110 @@ public class Main {
 
     public static int thread_count = 0;
 
+    private static int[] sensorMorphologies = new int[]{2,5,6};
+
     public static void main(String[] args) throws IOException, ParseException {
 
-        for(int k = 0; k < 4; k++) { //iterating over the different simConfig files in order to change the difficulty
+        for(int j = 0; j < 3; j++) { //iterating over the set of morphologies
 
-            Args options = new Args();
-            new JCommander(options, args);
+            int morphologyIndex = sensorMorphologies[j];
 
-            log.info(options.toString());
-            int difficulty = k+1; //so that it can access simconfig1 simconfig2 etc for difficulty
+            for(int k = 0; k < 3; k++) { //iterating over the different simConfig files in order to change the difficulty
 
-            String simConfigFP = "configs/simConfig" + Integer.toString(difficulty) + ".yml";
+                Args options = new Args();
+                new JCommander(options, args);
 
-            SimConfig simConfig = new SimConfig(simConfigFP);
-            // if (!isBlank(options.configFile)) {
-            //     simConfig = new SimConfig(options.configFile);
-            // } else {
-            //     simConfig = new SimConfig();
-            // }
+                log.info(options.toString());
+                int difficulty = k+1; //so that it can access simconfig1 simconfig2 etc for difficulty
 
-            //MorphologyConfig mc = new MorphologyConfig("configs/morphologyConfig.yml");
-            SensorCollection sensorCollection = new SensorCollection("configs/morphologyConfig.yml");
+                String simConfigFP = "configs/simConfig" + Integer.toString(difficulty) + ".yml";
 
-            //Morphology morphology = mc.getMorphology(1);
-            Morphology morphology = sensorCollection.getIdealMorph();
-
-            String difficultyLevel = "";
-            if (difficulty == 1) {
-                difficultyLevel = "Level_1_nocoop_simple";
-            }
-            else if (difficulty == 2) {
-                difficultyLevel = "Level_2_coop_simple";
-            }
-            else if (difficulty == 3) {
-                difficultyLevel = "Level_3_nocoop_complex";
-            }
-            else if(difficulty == 4) {
-                difficultyLevel = "Level_4_coop_complex";
-            }
-
-            String folderDir = "/NEATExperiments/Objective/" + difficultyLevel;
-            Utils.setDirectoryName(folderDir);
-
-            //System.out.println("Sensors count :" + morphology.getNumSensors());
-            RES_CONFIG = options.environment;
-
-            /////////////////////////////////////////////////////////////////////////////////////////////
-            //System.out.println("Running NEAT with objective search: RUN " + (run+1));
-            double[] params = {1000, 0, 0.3, 0.6, 1};
-            // double[] params = {1000, 0.3, 0, 0, 0.2, 1, 0};
-            // double[] params = {1000, 0.5, 0.3, 0.1, 0.2, 1, 0.2};
-            ScoreCalculator calculateScore =
-                    new ScoreCalculator(simConfig, options.simulationRuns, morphology, params, PARAM_TUNING,
-                    SEARCH_MECHANISM.OBJECTIVE, options.populationSize, 0, sensorCollection);
-
-            if (!isBlank(options.genomePath)) {
-                NEATNetwork network = (NEATNetwork) readObjectFromFile(options.genomePath);
-                calculateScore.demo(network);
-                return;
-            }
-
-            final NEATPopulation population;
-
-            //create new NEAT population: #input neurons, #output neurons, population size
-            //population = new NEATPopulation(5, 2, options.populationSize);
-            population = new NEATPopulation(morphology.getSensors().size(), 2, options.populationSize);
-            population.setInitialConnectionDensity(options.connectionDensity);
-            population.reset();
-
-            log.debug("Population initialized : "+options.populationSize);
-
-            //DO training
-            TrainEA train;
-            train = NEATUtil.constructNEATTrainer(population, calculateScore); //a trainer for a score function.
-            //set #threads to use
-            if (thread_count > 0) {
-                train.setThreadCount(thread_count);
-            }
-
-            //intialise the stats recorder
-            final StatsRecorder statsRecorder = new StatsRecorder(train, calculateScore, PARAM_TUNING, Arrays.toString(params), simConfig.toString());
-            //statsRecorder.recordIterationStats();
-            // calculateScore.demo(train.getCODEC().decode(train.getBestGenome()));
-            for (int i = train.getIteration(); i < options.numGenerations; i++) {
-                train.iteration();
-                statsRecorder.recordIterationStats();
-                // if (train.getBestGenome().getScore() >= CONVERGENCE_SCORE) {
-                //     log.info("Convergence reached at epoch " + train.getIteration());
-                //     break;
+                SimConfig simConfig = new SimConfig(simConfigFP);
+                // if (!isBlank(options.configFile)) {
+                //     simConfig = new SimConfig(options.configFile);
+                // } else {
+                //     simConfig = new SimConfig();
                 // }
+
+                //MorphologyConfig mc = new MorphologyConfig("configs/morphologyConfig.yml");
+                SensorCollection sensorCollection = new SensorCollection("configs/morphologyConfig.yml");
+
+                //Morphology morphology = mc.getMorphology(1);
+                Morphology morphology = sensorCollection.getIdealMorph();
+
+                String difficultyLevel = "";
+                if (difficulty == 1) {
+                    difficultyLevel = "Level_1_nocoop_simple";
+                }
+                else if (difficulty == 2) {
+                    difficultyLevel = "Level_2_coop_simple";
+                }
+                else if (difficulty == 3) {
+                    difficultyLevel = "Level_3_nocoop_complex";
+                }
+                else if(difficulty == 4) {
+                    difficultyLevel = "Level_4_coop_complex";
+                }
+
+                String folderDir = "/NEATExperiments/Morphology_" + Integer.toString(morphologyIndex) + "/" + difficultyLevel;
+                Utils.setDirectoryName(folderDir);
+
+                //System.out.println("Sensors count :" + morphology.getNumSensors());
+                RES_CONFIG = options.environment;
+
+                /////////////////////////////////////////////////////////////////////////////////////////////
+                //System.out.println("Running NEAT with objective search: RUN " + (run+1));
+                double[] params = {1000, 0, 0.3, 0.6, 1};
+                // double[] params = {1000, 0.3, 0, 0, 0.2, 1, 0};
+                // double[] params = {1000, 0.5, 0.3, 0.1, 0.2, 1, 0.2};
+                ScoreCalculator calculateScore =
+                        new ScoreCalculator(simConfig, options.simulationRuns, morphology, params, PARAM_TUNING,
+                        SEARCH_MECHANISM.OBJECTIVE, options.populationSize, 0, sensorCollection);
+
+                if (!isBlank(options.genomePath)) {
+                    NEATNetwork network = (NEATNetwork) readObjectFromFile(options.genomePath);
+                    calculateScore.demo(network);
+                    return;
+                }
+
+                final NEATPopulation population;
+
+                //create new NEAT population: #input neurons, #output neurons, population size
+                //population = new NEATPopulation(5, 2, options.populationSize);
+                population = new NEATPopulation(morphology.getSensors().size(), 2, options.populationSize);
+                population.setInitialConnectionDensity(options.connectionDensity);
+                population.reset();
+
+                log.debug("Population initialized : "+options.populationSize);
+
+                //DO training
+                TrainEA train;
+                train = NEATUtil.constructNEATTrainer(population, calculateScore); //a trainer for a score function.
+                //set #threads to use
+                if (thread_count > 0) {
+                    train.setThreadCount(thread_count);
+                }
+
+                //intialise the stats recorder
+                final StatsRecorder statsRecorder = new StatsRecorder(train, calculateScore, PARAM_TUNING, Arrays.toString(params), simConfig.toString());
+                //statsRecorder.recordIterationStats();
+                // calculateScore.demo(train.getCODEC().decode(train.getBestGenome()));
+                for (int i = train.getIteration(); i < options.numGenerations; i++) {
+                    train.iteration();
+                    statsRecorder.recordIterationStats();
+                    // if (train.getBestGenome().getScore() >= CONVERGENCE_SCORE) {
+                    //     log.info("Convergence reached at epoch " + train.getIteration());
+                    //     break;
+                    // }
+                }
+                // calculateScore.demo(train.getCODEC().decode(train.getBestGenome()));
+                log.debug("Training complete");
+                Encog.getInstance().shutdown();
             }
-            // calculateScore.demo(train.getCODEC().decode(train.getBestGenome()));
-            log.debug("Training complete");
-            Encog.getInstance().shutdown();
+
         }
+
+
 
         //     NEAT with Objective search
         //
@@ -174,13 +184,13 @@ public class Main {
         public String configFile = "configs/simConfig.yml";
 
         @Parameter(names = "-i", description = "Number of generations to train for")
-        public int numGenerations = 100;
+        public int numGenerations = 5;
 
         @Parameter(names = "-p", description = "Initial population size")
-        public int populationSize = 150;
+        public int populationSize = 2;
 
         @Parameter(names = "--sim-runs", description = "Number of simulation runs per iteration")
-        public int simulationRuns = 5;
+        public int simulationRuns = 3;
 
         @Parameter(names = "--search-mechanism", description = "The search mechanism to be used")
         public SEARCH_MECHANISM searchMechanism = SEARCH_MECHANISM.OBJECTIVE;

@@ -113,7 +113,7 @@ public class ScoreCalculator implements CalculateScore {
         //System.out.println("ScoreCalculator (line 87): performing the score calculation");
 
         //creating the bit mask that is going ot be used to simulate the sensors on this team of robots breaking
-        int[] bitMask = sensorCollection.generateRandomMask();
+        int[] bitMask = sensorCollection.getIdealBitMask();
 
         if (searchMechanism == SEARCH_MECHANISM.NOVELTY) {
             NoveltyPhenotype n = (NoveltyPhenotype)method;
