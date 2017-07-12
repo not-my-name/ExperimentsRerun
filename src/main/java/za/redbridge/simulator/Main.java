@@ -184,13 +184,13 @@ public class Main {
         public String configFile = "configs/simConfig.yml";
 
         @Parameter(names = "-i", description = "Number of generations to train for")
-        public int numGenerations = 5;
+        public int numGenerations = 100;
 
         @Parameter(names = "-p", description = "Initial population size")
-        public int populationSize = 2;
+        public int populationSize = 150;
 
         @Parameter(names = "--sim-runs", description = "Number of simulation runs per iteration")
-        public int simulationRuns = 3;
+        public int simulationRuns = 5;
 
         @Parameter(names = "--search-mechanism", description = "The search mechanism to be used")
         public SEARCH_MECHANISM searchMechanism = SEARCH_MECHANISM.OBJECTIVE;
