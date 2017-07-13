@@ -48,12 +48,21 @@ public class Main {
 
 	private static Archive archive;
 
-	private static int[] morphCollection = {2,5,6};
+	private static int[] morphCollection = {1,2,5,6};
+
+	private static int originalMorphology = 2; //The morphology that the current network was originally evolved with
 
 	public static void main(String args[]) throws IOException, ParseException{
 
-		for(int j = 0; j < 3; j++) { //iterating over the different morphologies
+		for(int j = 0; j < 4; j++) { //iterating over the different morphologies
+
 			int morphIndex = morphCollection[j];
+
+			if(morphIndex == originalMorphology) {
+				continue;
+			}
+
+			System.out.println("The original = " + originalMorphology + " The current = " + morphIndex);
 
 			for(int k = 0; k < 3; k++) { //iterating over the different complexity levels
 
@@ -70,29 +79,28 @@ public class Main {
 
 				SensorCollection sensorCollection = new SensorCollection("configs/morphologyConfig.yml");
 				Morphology morphology = sensorCollection.getMorph(morphIndex);
-				numInputs = morphology.getNumSensors();
 
 				//creating the folder directory for the results
 				String difficultyLevel = "";
 				String dLevel = "";
 				if (difficulty == 1) {
-	        difficultyLevel = "Level_1_nocoop_simple";
+	        	difficultyLevel = "Level_1_nocoop_simple";
 					dLevel = "Level_1";
-	      }
-	      else if (difficulty == 2) {
-	      	difficultyLevel = "Level_2_coop_simple";
+	      		}
+	      		else if (difficulty == 2) {
+	      			difficultyLevel = "Level_2_coop_simple";
 					dLevel = "Level_2";
-	      }
-	      else if (difficulty == 3) {
-	        difficultyLevel = "Level_3_nocoop_complex";
+	      		}
+	      		else if (difficulty == 3) {
+	        		difficultyLevel = "Level_3_nocoop_complex";
 					dLevel = "Level_3";
-	      }
-	      else if(difficulty == 4) {
-	        difficultyLevel = "Level_4_coop_complex";
+	      		}
+	      		else if(difficulty == 4) {
+	        		difficultyLevel = "Level_4_coop_complex";
 					dLevel = "Level_4";
-	      }
+	      		}
 
-				String folderDir = "/EvaluationRuns/Morphology_" + Integer.toString(morphIndex) + "/" + difficultyLevel;
+				String folderDir = "/EvaluationRuns/Original_" + Integer.toString(originalMorphology) + "/Morphology_" + Integer.toString(morphIndex) + "/" + difficultyLevel;
 				Utils.setDirectoryName(folderDir);
 
 				ScoreCalculator scoreCalculator = new ScoreCalculator(simConfig, options.simulationRuns,
@@ -105,7 +113,8 @@ public class Main {
 			    }
 
 				//String networkSourceDirectory = "/home/ruben/Masters_2017/Experiments/EvaluationRuns/ExperimentsRerun/ResultNetworks/network.ser";
-				String networkSourceDirectory = "/home/p/pttand010/Desktop/ConferenceEvalRuns/Second_Set/ExperimentsRerun/ConferenceResults/Second/Morph_" + Integer.toString(morphIndex) + "/" + dLevel + "/network.ser";
+				String networkSourceDirectory = "/home/ruben/Masters_2017/Experiments/ConferenceEvalRuns/Second_Sets/ExperimentsRerun/ConferenceResults/Second/Morph_" +
+													Integer.toString(originalMorphology) + "/Level_" + Integer.toString(difficulty) + "/network.ser";
 
 				//final StatsRecorder statsRecorder = new StatsRecorder(trainer, scoreCalculator); //this is basically where the simulation runs
 

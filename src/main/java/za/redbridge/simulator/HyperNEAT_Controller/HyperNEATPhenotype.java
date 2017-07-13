@@ -23,6 +23,8 @@ public class HyperNEATPhenotype implements Phenotype {
     private final MLData input;
     private final List<AgentSensor> sensors;
 
+	private int actualInputCount;
+
     public HyperNEATPhenotype(NEATNetwork network, Morphology morphology) { //need to change the SensorMorpholgy to just Morphology that Daniel made
         this.network = network;
         this.morphology = morphology;
@@ -32,12 +34,14 @@ public class HyperNEATPhenotype implements Phenotype {
 
         // Initialise sensors
         final int numSensors = morphology.getNumSensors();
+		actualInputCount = numSensors;
         sensors = new ArrayList<>(numSensors);
         for (int i = 0; i < numSensors; i++) {
-            sensors.add(morphology.getSensorList().get(i)); //reading in the sensors from the current assigned morphology 
-        }                                         //remember that there is a different collection of sensors for each experiment                  
+            sensors.add(morphology.getSensorList().get(i)); //reading in the sensors from the current assigned morphology
+        }                                         //remember that there is a different collection of sensors for each experiment
 
-        input = new BasicMLData(numSensors);
+        //input = new BasicMLData(numSensors);
+        input = new BasicMLData(11);
         //System.out.println("HyperNEATPhenotype: number sensors = " + numSensors);
     }
 
@@ -48,9 +52,17 @@ public class HyperNEATPhenotype implements Phenotype {
 
     @Override
     public Double2D step(List<List<Double>> sensorReadings) {
+
         final MLData input = this.input;
         for (int i = 0, n = input.size(); i < n; i++) {
-            input.setData(i, sensorReadings.get(i).get(0)); //assigning the sensor inputs to the input nodes
+
+			if(i >= actualInputCount) {
+				input.setData(i, 0);
+			}
+			else {
+				input.setData(i, sensorReadings.get(i).get(0)); //assigning the sensor inputs to the input nodes
+			}
+
         }
 
         //System.out.println("HyperNEATPhenotype: size of input = " + input.size());
