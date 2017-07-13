@@ -72,11 +72,11 @@ public class SensorCollection {
 		Random rand = new Random();
 
 		int[] newRandomMask = new int[numSensors];
-		int numToDisable = rand.nextInt(11);
+		int numToDisable = rand.nextInt(numSensors);
 
 		for(int k = 0; k < numSensors; k++) {
 
-			int disabilityProbability = rand.nextInt(11);
+			int disabilityProbability = rand.nextInt(numSensors);
 
 			//check if the randomly generated probability is within the necessary bounds
 			if (disabilityProbability <= numToDisable) {

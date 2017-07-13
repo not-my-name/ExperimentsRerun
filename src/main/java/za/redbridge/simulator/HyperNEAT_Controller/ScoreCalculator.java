@@ -262,7 +262,7 @@ public class ScoreCalculator implements CalculateScore {
         double avgNormC = 0;
 
 
-	    for(int k = 0; k < 20; k++) {
+	    for(int k = 0; k < 2; k++) {
 
 		    Behaviour resultantBehaviour = simulation.runObjective();
         	int [] resTypeCount = simulation.getResTypeCount();

@@ -25,6 +25,8 @@ public class HyperNEATPhenotype implements Phenotype {
 
 	private final int[] bitMask;
 
+	private int actualInputCount;
+
     public HyperNEATPhenotype(NEATNetwork network, Morphology morphology, int[] bitMask) { //need to change the SensorMorpholgy to just Morphology that Daniel made
         this.network = network;
         this.morphology = morphology;
@@ -33,12 +35,15 @@ public class HyperNEATPhenotype implements Phenotype {
 
         // Initialise sensors
         final int numSensors = morphology.getNumSensors();
+		actualInputCount = morphology.getNumSensors();
         sensors = new ArrayList<>(numSensors);
         for (int i = 0; i < numSensors; i++) {
             sensors.add(morphology.getSensorList().get(i)); //reading in the sensors from the current assigned morphology
         }                                         //remember that there is a different collection of sensors for each experiment
 
         input = new BasicMLData(numSensors);
+        //input = new BasicMLData(11);
+
         //System.out.println("HyperNEATPhenotype: number sensors = " + numSensors);
     }
 

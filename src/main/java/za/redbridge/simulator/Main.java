@@ -48,69 +48,79 @@ public class Main {
 
 	private static Archive archive;
 
+	private static int[] morphologySets = {1,2,5,6};
+
 	public static void main(String args[]) throws IOException, ParseException{
 
-		for(int k = 0; k < 3; k++) { //iterating over the different complexity levels
+		for(int j = 0; j < 4; j++) { //iterating over the different morphologies
 
-			Args options = new Args();
-			new JCommander(options, args);
-			log.info(options.toString());
+			int morphIndex = morphologySets[j];
 
-			int difficulty = k+1;
+			for(int k = 0; k < 3; k++) { //iterating over the different complexity levels
 
-			//getting the correct simulation configuration for this experiment case
-			//simconfig shows the types of blocks present, as well as their properties and the connection schema that is to be used
-			String simConfigFP = "configs/simConfig" + Integer.toString(difficulty) + ".yml";
-			SimConfig simConfig = new SimConfig(simConfigFP);
+				Args options = new Args();
+				new JCommander(options, args);
+				log.info(options.toString());
 
-			SensorCollection sensorCollection = new SensorCollection("configs/morphologyConfig.yml");
-			Morphology morphology = sensorCollection.getMorph(1);
-			numInputs = morphology.getNumSensors();
+				int difficulty = k+1;
 
-			//creating the folder directory for the results
-			String difficultyLevel = "";
-			String dLevel = "";
-			if (difficulty == 1) {
-				difficultyLevel = "Level_1_nocoop_simple";
-				dLevel = "Level_1";
+				//getting the correct simulation configuration for this experiment case
+				//simconfig shows the types of blocks present, as well as their properties and the connection schema that is to be used
+				String simConfigFP = "configs/simConfig" + Integer.toString(difficulty) + ".yml";
+				SimConfig simConfig = new SimConfig(simConfigFP);
+
+				SensorCollection sensorCollection = new SensorCollection("configs/morphologyConfig.yml");
+				Morphology morphology = sensorCollection.getMorph(morphIndex);
+				numInputs = morphology.getNumSensors();
+
+				//creating the folder directory for the results
+				String difficultyLevel = "";
+				String dLevel = "";
+				if (difficulty == 1) {
+					difficultyLevel = "Level_1_nocoop_simple";
+					dLevel = "Level_1";
+				}
+				else if (difficulty == 2) {
+					difficultyLevel = "Level_2_coop_simple";
+					dLevel = "Level_2";
+				}
+				else if (difficulty == 3) {
+					difficultyLevel = "Level_3_nocoop_complex";
+					dLevel = "Level_3";
+				}
+				else if(difficulty == 4) {
+					difficultyLevel = "Level_4_coop_complex";
+					dLevel = "Level_4";
+				}
+				String folderDir = "/EvaluationRuns/Morph_" + Integer.toString(morphIndex) + "/Level_" + difficultyLevel;
+				Utils.setDirectoryName(folderDir);
+
+				ScoreCalculator scoreCalculator = new ScoreCalculator(simConfig, options.simulationRuns,
+									morphology, options.populationSize, sensorCollection);
+
+				if (!isBlank(options.genomePath)) {
+					   NEATNetwork network = (NEATNetwork) readObjectFromFile(options.genomePath);
+					   scoreCalculator.demo(network);
+					   return;
+			    }
+
+				String networkSourceDirectory = "/home/ruben/Masters_2017/Experiments/ConferenceEvalRuns/Third_Random/ExperimentsRerun/ConferenceResults/Morph_"
+									+ Integer.toString(morphIndex) + "/Level_" + Integer.toString(difficulty) + "/network.ser";
+				//String networkSourceDirectory = "/home/p/pttand010/Desktop/ConferenceEvalRuns/Third_Random/ExperimentsRerun/ConferenceResults/Third/" + dLevel + "/network.ser";
+
+				//final StatsRecorder statsRecorder = new StatsRecorder(trainer, scoreCalculator); //this is basically where the simulation runs
+
+				NEATNetwork network = (NEATNetwork) readObjectFromFile(networkSourceDirectory);
+
+				//final StatsRecorder statsRecorder = new StatsRecorder(scoreCalculator); //this is basically where the simulation runs
+
+				scoreCalculator.runEvaluation(network);
+				log.debug("Evaluation Complete");
+				Encog.getInstance().shutdown();
 			}
-			else if (difficulty == 2) {
-				difficultyLevel = "Level_2_coop_simple";
-				dLevel = "Level_2";
-			}
-			else if (difficulty == 3) {
-				difficultyLevel = "Level_3_nocoop_complex";
-				dLevel = "Level_3";
-			}
-			else if(difficulty == 4) {
-				difficultyLevel = "Level_4_coop_complex";
-				dLevel = "Level_4";
-			}
-			String folderDir = "/EvaluationRuns/" + difficultyLevel;
-			Utils.setDirectoryName(folderDir);
-
-			ScoreCalculator scoreCalculator = new ScoreCalculator(simConfig, options.simulationRuns,
-								morphology, options.populationSize, sensorCollection);
-
-			if (!isBlank(options.genomePath)) {
-				   NEATNetwork network = (NEATNetwork) readObjectFromFile(options.genomePath);
-				   scoreCalculator.demo(network);
-				   return;
-		    }
-
-			//String networkSourceDirectory = "/home/ruben/Masters_2017/Experiments/EvaluationRuns/ExperimentsRerun/ResultNetworks/network.ser";
-			String networkSourceDirectory = "/home/p/pttand010/Desktop/ConferenceEvalRuns/Third_Random/ExperimentsRerun/ConferenceResults/Third/" + dLevel + "/network.ser";
-
-			//final StatsRecorder statsRecorder = new StatsRecorder(trainer, scoreCalculator); //this is basically where the simulation runs
-
-			NEATNetwork network = (NEATNetwork) readObjectFromFile(networkSourceDirectory);
-
-			//final StatsRecorder statsRecorder = new StatsRecorder(scoreCalculator); //this is basically where the simulation runs
-
-			scoreCalculator.runEvaluation(network);
-			log.debug("Evaluation Complete");
-			Encog.getInstance().shutdown();
 		}
+
+
 	}
 
 	private static class Args {
