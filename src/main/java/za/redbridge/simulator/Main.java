@@ -48,50 +48,85 @@ public class Main {
 
 	private static Archive archive;
 
+	//have an array of folder directories for each of the network controllers
+	String[] controllerDirectories = [];
+
 	public static void main(String args[]) throws IOException, ParseException{
 
-		for(int k = 0; k < 3; k++) { //iterating over the different complexity levels
+		GraphvizEngine gvEngine = new GraphvizEngine();
 
-			Args options = new Args();
-			new JCommander(options, args);
-			log.info(options.toString());
+		for(int k = 0; k < 4; k++) {
 
-			int difficulty = k+1;
+			String controllerMorph = ""; //the string indicating what morph was used to train the current network
+			String networkSourceDirectory = controllerDirectories[k];
+
+			if(k == 0) {
+				controllerMorph = "Morph_1";
+			}
+			else if(k == 1) {
+				controllerMorph = "Morph_2";
+			}
+			else if(k == 2) {
+				controllerMorph = "Morph_3";
+			}
+			else if(k == 3) {
+				controllerMorph = "Morph_4";
+			}
+
+			NEATNetwork network = (NEATNetwork) readObjectFromFile(networkSourceDirectory);
+
+
+		}
+
+		//for(int k = 0; k < 3; k++) { //iterating over the different complexity levels
+
+
+
+		//this code is going to be used to iterate over the networks in the folders and then use the graph viz class to create
+		//visualizations of the networks themselves
+		//
+		//write each out to a file that indicates what morphology was used in order to train the network
+
+			// Args options = new Args();
+			// new JCommander(options, args);
+			// log.info(options.toString());
+
+			//int difficulty = k+1;
 
 			//getting the correct simulation configuration for this experiment case
 			//simconfig shows the types of blocks present, as well as their properties and the connection schema that is to be used
-			String simConfigFP = "configs/simConfig" + Integer.toString(difficulty) + ".yml";
-			SimConfig simConfig = new SimConfig(simConfigFP);
+			// String simConfigFP = "configs/simConfig" + Integer.toString(difficulty) + ".yml";
+			// SimConfig simConfig = new SimConfig(simConfigFP);
 
-			SensorCollection sensorCollection = new SensorCollection("configs/morphologyConfig.yml");
-			Morphology morphology = sensorCollection.getMorph(1);
-			numInputs = morphology.getNumSensors();
+			// SensorCollection sensorCollection = new SensorCollection("configs/morphologyConfig.yml");
+			// Morphology morphology = sensorCollection.getMorph(1);
+			// numInputs = morphology.getNumSensors();
 
 			//creating the folder directory for the results
-			String difficultyLevel = "";
-			String dLevel = "";
-			if (difficulty == 1) {
-                difficultyLevel = "Level_1_nocoop_simple";
-				dLevel = "Level_1";
-            }
-            else if (difficulty == 2) {
-                difficultyLevel = "Level_2_coop_simple";
-				dLevel = "Level_2";
-            }
-            else if (difficulty == 3) {
-                difficultyLevel = "Level_3_nocoop_complex";
-				dLevel = "Level_3";
-            }
-            else if(difficulty == 4) {
-                difficultyLevel = "Level_4_coop_complex";
-				dLevel = "Level_4";
-            }
+			// String difficultyLevel = "";
+			// String dLevel = "";
+			// if (difficulty == 1) {
+            //     difficultyLevel = "Level_1_nocoop_simple";
+			// 	dLevel = "Level_1";
+            // }
+            // else if (difficulty == 2) {
+            //     difficultyLevel = "Level_2_coop_simple";
+			// 	dLevel = "Level_2";
+            // }
+            // else if (difficulty == 3) {
+            //     difficultyLevel = "Level_3_nocoop_complex";
+			// 	dLevel = "Level_3";
+            // }
+            // else if(difficulty == 4) {
+            //     difficultyLevel = "Level_4_coop_complex";
+			// 	dLevel = "Level_4";
+            // }
 
-			String folderDir = "/EvaluationRuns/" + difficultyLevel;
-			Utils.setDirectoryName(folderDir);
+			// String folderDir = "/EvaluationRuns/" + difficultyLevel;
+			// Utils.setDirectoryName(folderDir);
 
-			ScoreCalculator scoreCalculator = new ScoreCalculator(simConfig, options.simulationRuns,
-								morphology, options.populationSize, sensorCollection);
+			// ScoreCalculator scoreCalculator = new ScoreCalculator(simConfig, options.simulationRuns,
+			// 					morphology, options.populationSize, sensorCollection);
 
 			if (!isBlank(options.genomePath)) {
 				   NEATNetwork network = (NEATNetwork) readObjectFromFile(options.genomePath);
