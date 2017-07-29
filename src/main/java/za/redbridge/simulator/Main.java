@@ -34,6 +34,9 @@ import za.redbridge.simulator.Archive;
 
 import za.redbridge.simulator.Utils;
 
+import java.nio.file.*;
+import za.redbridge.simulator.GraphvizEngine;
+
 public class Main {
 
 	private final static Logger log = LoggerFactory.getLogger(Main.class);
@@ -49,34 +52,45 @@ public class Main {
 	private static Archive archive;
 
 	//have an array of folder directories for each of the network controllers
-	String[] controllerDirectories = [];
+	//private static String[] controllerDirectories = [];
 
 	public static void main(String args[]) throws IOException, ParseException{
 
 		GraphvizEngine gvEngine = new GraphvizEngine();
 
-		for(int k = 0; k < 4; k++) {
+		//for(int k = 0; k < 4; k++) {
 
 			String controllerMorph = ""; //the string indicating what morph was used to train the current network
-			String networkSourceDirectory = controllerDirectories[k];
+			//String networkSourceDirectory = controllerDirectories[k];
+			String temp = "/home/ruben/Masters_2017/Network_Visualisations/ExperimentsRerun/ConferenceResults/First/Level_1/";
+			String networkSourceDirectory = temp + "network.ser";
 
-			if(k == 0) {
-				controllerMorph = "Morph_1";
-			}
-			else if(k == 1) {
-				controllerMorph = "Morph_2";
-			}
-			else if(k == 2) {
-				controllerMorph = "Morph_3";
-			}
-			else if(k == 3) {
-				controllerMorph = "Morph_4";
-			}
+			// if(k == 0) {
+			// 	controllerMorph = "Morph_1";
+			// }
+			// else if(k == 1) {
+			// 	controllerMorph = "Morph_2";
+			// }
+			// else if(k == 2) {
+			// 	controllerMorph = "Morph_3";
+			// }
+			// else if(k == 3) {
+			// 	controllerMorph = "Morph_4";
+			// }
+			//
+
+			String destinationDir = temp + "outputImage.txt";
+
+			Path path = Paths.get(destinationDir);
 
 			NEATNetwork network = (NEATNetwork) readObjectFromFile(networkSourceDirectory);
 
+			//gvEngine.saveNetwork(network, path); //call the graphviz engine class to save the network, this method uses private methods to create the output text files
+			gvEngine.saveGenome(network, path);
 
-		}
+
+
+		//}
 
 		//for(int k = 0; k < 3; k++) { //iterating over the different complexity levels
 
@@ -128,26 +142,26 @@ public class Main {
 			// ScoreCalculator scoreCalculator = new ScoreCalculator(simConfig, options.simulationRuns,
 			// 					morphology, options.populationSize, sensorCollection);
 
-			if (!isBlank(options.genomePath)) {
-				   NEATNetwork network = (NEATNetwork) readObjectFromFile(options.genomePath);
-				   scoreCalculator.demo(network);
-				   return;
-		    }
+			// if (!isBlank(options.genomePath)) {
+			// 	   NEATNetwork network = (NEATNetwork) readObjectFromFile(options.genomePath);
+			// 	   scoreCalculator.demo(network);
+			// 	   return;
+		    // }
 
 			//String networkSourceDirectory = "/THIS NEEDS TO BE CHANGED/ConferenceResults/First/" + dLevel + "/network.ser";
 
-			String networkSourceDirectory = "/home/p/pttand010/Desktop/ConferenceEvalRuns/First_Fixed/ExperimentsRerun/ConferenceResults/First/" + dLevel + "/network.ser";
+			//String networkSourceDirectory = "/home/p/pttand010/Desktop/ConferenceEvalRuns/First_Fixed/ExperimentsRerun/ConferenceResults/First/" + dLevel + "/network.ser";
 
 			//final StatsRecorder statsRecorder = new StatsRecorder(trainer, scoreCalculator); //this is basically where the simulation runs
 
-			NEATNetwork network = (NEATNetwork) readObjectFromFile(networkSourceDirectory);
+			//NEATNetwork network = (NEATNetwork) readObjectFromFile(networkSourceDirectory);
 
 			//final StatsRecorder statsRecorder = new StatsRecorder(scoreCalculator); //this is basically where the simulation runs
 
-			scoreCalculator.runEvaluation(network);
-			log.debug("Evaluation Complete");
-			Encog.getInstance().shutdown();
-		}
+			// scoreCalculator.runEvaluation(network);
+			// log.debug("Evaluation Complete");
+			// Encog.getInstance().shutdown();
+		//}
 	}
 
 	private static class Args {
