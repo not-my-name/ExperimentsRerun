@@ -1,0 +1,1 @@
+epoch: 29, fitness: 0.378947
