@@ -1,0 +1,9 @@
+digraph G {
+  0 [ label="Input (0)" ]
+  12 [ label="Output (12)" ]
+  13 [ label="Output (13)" ]
+  { rank=same 0 }
+  { rank=same 12 13 }
+  0 -> 12 [ label="2.288" ];
+  0 -> 13 [ label="2.288" ];
+}
