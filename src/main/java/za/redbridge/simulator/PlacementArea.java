@@ -1,6 +1,6 @@
 package za.redbridge.simulator;
 
-import com.sun.javafx.geom.Vec2d;
+//import com.sun.javafx.geom.Vec2d;
 import org.jbox2d.collision.AABB;
 import org.jbox2d.common.MathUtils;
 import org.jbox2d.common.Vec2;
