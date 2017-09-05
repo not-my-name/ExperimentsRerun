@@ -59,7 +59,7 @@ public class Main {
 
     public static void main(String[] args) throws IOException, ParseException {
 
-        for(int k = 0; k < 4; k++) { //iterating over the different simConfig files in order to change the difficulty
+        for(int k = 0; k < 2; k++) { //iterating over the different simConfig files in order to change the difficulty
 
             Args options = new Args();
             new JCommander(options, args);
